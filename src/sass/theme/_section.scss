@@ -29,6 +29,7 @@ section {
 		width: 100vw;
 		justify-content: flex-start;
 		position: absolute;
+		top: 0;
 		min-height: 400vh;
 
 		#intro-heading-canvas-container {
@@ -71,29 +72,32 @@ section {
 		height: 350vh;
 
 		.h1-container {
+			opacity: .9;
 			position: fixed;
 			top: 0;
 			height: 100vh;
 			transform: scale(.8);
 			transform-origin: center center;
-			padding-top: vw(96);
+			padding-top: vw(120);
+			transition: opacity .5s;
 
 			.burst {
 				transform: scale(0);
 				position: absolute;
 				left: 10vw;
-				top: 24vh;
-				width: vw(220);
+				top: 16vh;
+				width: vw(280);
 				z-index: -1;
 			}
 		}
 
 		.spinning-text-container {
 			position: absolute;
-			top: vw(40);
-			right: vw(60);
-			width: vw(440);
-			height: vw(440);
+			top: vw(160);
+			transform: scale(1.4);
+			right: vw(-60);
+			width: vw(640);
+			height: vw(640);
 			font-size: 8px;
 			font-weight: 400;
 			font-style: italic;
@@ -103,9 +107,11 @@ section {
 			background-repeat: no-repeat;
 			transform: scale(0);
 			border-radius: 50%;
+			box-shadow: 8px 8px 50px rgba(17, 17, 17, .05), inset 0 0 250px rgba(255, 255, 255, .2);
 			overflow: hidden;
-			backdrop-filter: url(#circle-filter) saturate(1) brightness(1.06);
-			-webkit-backdrop-filter: url(#circle-filter) saturate(1) brightness(1.06);
+			backdrop-filter: url(#circle-filter) saturate(1) brightness(1.05);
+			-webkit-backdrop-filter: url(#circle-filter) saturate(1) brightness(1.05);
+			transition: all 1s;
 
 			.spin-svg {
 				display: block;
@@ -118,6 +124,8 @@ section {
 				animation: spin 20s linear infinite;
 				fill: $off-black !important;
 				font-weight: 800;
+				font-size: vw(5);
+				text-transform: uppercase;
 
 				#textPath {
 					display: flex;
@@ -126,6 +134,17 @@ section {
 						display: inline-flex;
 					}
 				}
+			}
+
+			&.goodbye {
+				transform: scale(1.2) translateX(200px) !important;
+				opacity: 0;
+			}
+		}
+
+		#usp {
+			.col {
+				opacity: 0;
 			}
 		}
 	}
@@ -225,4 +244,10 @@ section {
 	// 		height: auto;
 	// 	}
 	// }
+}
+
+#page.active {
+	.h1-container {
+		opacity: 1;
+	}
 }

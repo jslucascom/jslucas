@@ -10,16 +10,22 @@
  */
 
 // ─── #page "active" state ────────────────────────────────────────────────
-// #page can be pushed active by more than one independent condition (h1
-// finishing its grow-scale, scroll depth, etc.) — track each by name and
-// only drop the class once every condition is false again, so one
-// condition reversing doesn't undo another that's still true.
 const pageActiveConditions = {};
 function setPageActiveCondition(name, isActive) {
 	pageActiveConditions[name] = isActive;
 	const page = document.querySelector("#page");
 	if (!page) return;
-	page.classList.toggle("active", Object.values(pageActiveConditions).some(Boolean));
+
+	const wasActive = page.classList.contains("active");
+	const nowActive = Object.values(pageActiveConditions).some(Boolean);
+	page.classList.toggle("active", nowActive);
+
+	// Lets other init*() functions (e.g. initIntroColumnsReveal) react to
+	// #page gaining/losing "active" without each needing its own polling
+	// or MutationObserver.
+	if (nowActive !== wasActive) {
+		page.dispatchEvent(new CustomEvent("page:activechange", { detail: nowActive }));
+	}
 }
 
 // ─── Active section ─────────────────────────────────────────────────────
@@ -76,7 +82,7 @@ function initTextSplit() {
 		});
 		createScrollTrigger(element, tl);
 	});
-	
+
 	document.querySelectorAll("[letters-slide-up]:not(#h1)").forEach((element) => {
 		const tl = gsap.timeline({ paused: true });
 		tl.from(element.querySelectorAll(".char"), {
@@ -91,26 +97,42 @@ function initTextSplit() {
 	gsap.set("[text-split]", { opacity: 1 });
 }
 
+// ─── Intro stat columns reveal (each column rises up, staggered) ────────
+//
+// Triggered by #page gaining "active" (see setPageActiveCondition) rather
+// than each column's own scroll position, since all 4 columns sit
+// side-by-side and would otherwise reveal at ~the same scroll depth anyway.
+// Whole columns start hidden and rise up one-by-one, .2s apart. The
+// heading/paragraph split-text inside each column still gets its own
+// letter-by-letter reveal, triggered separately as it becomes visible (see
+// the generic [letters-slide-up] handling above in initTextSplit).
+function initIntroColumnsReveal() {
+	const row = document.querySelector("[data-intro-columns]");
+	const page = document.querySelector("#page");
+	if (!row || !page) return;
+
+	const columns = row.querySelectorAll(".col");
+	if (!columns.length) return;
+
+	const master = gsap.timeline({ paused: true });
+	master.from(columns, {
+		opacity: 0,
+		y: 40,
+		duration: 0.6,
+		ease: "power1.out",
+		stagger: 0.2 // each column rises up .2s after the previous one
+	});
+
+	page.addEventListener("page:activechange", (e) => {
+		if (e.detail) {
+			master.play();
+		} else {
+			master.reverse();
+		}
+	});
+}
+
 // ─── Intro reveal (burst, spinning-text-container, h1 split text) ───────
-// All three stay hidden until #intro's top reaches the top of the viewport,
-// then reverse the instant it isn't flush with the top anymore (even 1px).
-// main's padding-top: 150vh (_global.scss) already reserves scroll space for
-// the hero's laptop animation before #intro begins, so #intro's own "top
-// top" IS the 150vh mark (scrollAnimationHeight in laptop-3d.js) — no extra
-// offset needed. A single ScrollTrigger point (onEnter / onLeaveBack),
-// rather than a continuous direction check, since the trigger is this one
-// specific scroll position, not "any time scrolling reverses".
-//
-// burst/spinning-text-container are plain GSAP tweens (matching the removed
-// grow-burst/grow-half keyframe values), not CSS animations driven via the
-// Web Animations API — that approach only ever played once and reversed
-// sluggishly, because a CSS animation's own play-state fights repeated
-// script-driven play()/reverse() calls. GSAP tweens handle repeat
-// play/reverse cycles cleanly, and timeScale() lets the reverse run at a
-// different (faster) speed than the load-in.
-//
-// Must run after initTextSplit() so #h1 has already been split into .char
-// spans.
 function initIntroReveal() {
 	const burst = document.querySelector("#intro .h1-container .burst");
 	const spinningText = document.querySelector("#intro .spinning-text-container");
@@ -155,26 +177,17 @@ function initIntroReveal() {
 
 	ScrollTrigger.create({
 		trigger: "#intro",
-		start: "top top",
+		start: () => window.innerHeight * 1.4, // 140vh, recalculated on resize
 		onEnter: () => {
 			growTweens.forEach((tween) => tween.timeScale(1).play());
 			if (h1Timeline) h1Timeline.play();
 		},
 		onLeaveBack: () => {
 			growTweens.forEach((tween) => tween.timeScale(2).reverse());
-			// ...but all letters disappear together on the way out, rather
-			// than reversing the same stagger (which drags the last letter's
-			// exit out well after the first). A separate, non-staggered tween
-			// — not h1Timeline.reverse() — handles this; GSAP's auto-overwrite
-			// takes control of the chars' yPercent away from the timeline, so
-			// once it finishes, the timeline's own playhead is reset to 0
-			// (an instant, invisible no-op since the chars are already at the
-			// "from" state) so the next onEnter plays the staggered reveal
-			// correctly again.
 			if (h1Chars) {
 				gsap.to(h1Chars, {
 					yPercent: 120,
-					duration: 0.4,
+					duration: 0.2,
 					ease: "power1.in",
 					onComplete: () => h1Timeline.progress(0).pause()
 				});
@@ -183,43 +196,10 @@ function initIntroReveal() {
 	});
 }
 
-// ─── Values section card reveal ─────────────────────────────────────────
-// NOT CURRENTLY USED — section-Values.astro lives under UNUSED/ and isn't
-// imported in index.astro, so #values-inner/.value-card never exist in the
-// DOM. Uncomment this and its call in initScrollControls() once Values is
-// back in the page.
-/*
-function initValuesReveal() {
-	// Pins #values-inner and slides .value-card elements in from the right as
-	// the user scrolls.
-	const section = document.querySelector("#values-inner");
-	const cards = document.querySelectorAll("#values .value-card");
-	if (!section || !cards.length) return;
-
-	// Cards start completely off-screen to the right (no opacity change) —
-	// SVGs stay in place as backgrounds
-	gsap.set(cards, { x: "100vw" });
-
-	gsap.to(cards, {
-		x: 0,
-		ease: "power3.out",
-		stagger: 0.33, // each card follows the previous
-		scrollTrigger: {
-			trigger: "#values-inner",
-			pin: "#values-inner",
-			start: "top top", // pin when section hits top of viewport
-			end: "+=300%", // scroll budget: 3x viewport height for smooth stagger
-			scrub: 1,
-			anticipatePin: 1,
-			markers: false // set to true for debugging
-		}
-	});
-}
-*/
-
 // ─── Intro heading scale (laptop stage-2 growth window) ─────────────────
 function initH1GrowScale() {
 	const h1Container = document.querySelector("#intro .h1-container");
+	const spinningText = document.querySelector("#intro .spinning-text-container");
 	if (!h1Container) return;
 
 	const baseScale = 0.8; // matches _section.scss's default .h1-container transform
@@ -234,13 +214,17 @@ function initH1GrowScale() {
 		// toggled off again if scrolled back before growth completes, so it
 		// stays in sync rather than getting stuck on after one visit.
 		setPageActiveCondition("h1Grown", progress >= 1);
+
+		// Same reasoning as above: toggled (not just added) so it stays in
+		// sync if the user scrolls back to before growth starts.
+		if (spinningText) spinningText.classList.toggle("goodbye", progress > 0);
 	});
 }
 
 // ─── #page active past 400vh scrolled ───────────────────────────────────
 function initPageActiveScrollDepth() {
 	ScrollTrigger.create({
-		start: () => window.innerHeight * 4, // 400vh, recalculated on resize
+		start: () => window.innerHeight * 3.4, // 340vh, recalculated on resize
 		onEnter: () => setPageActiveCondition("scrolledPast400vh", true),
 		onLeaveBack: () => setPageActiveCondition("scrolledPast400vh", false)
 	});
@@ -257,8 +241,8 @@ export function initScrollControls() {
 
 	initActiveSection();
 	initTextSplit();
+	initIntroColumnsReveal();
 	initIntroReveal();
-	// initValuesReveal(); // uncomment once section-Values.astro is back in the page
 	initH1GrowScale();
 	initPageActiveScrollDepth();
 }

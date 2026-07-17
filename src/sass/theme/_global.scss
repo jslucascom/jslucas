@@ -23,21 +23,20 @@ body {
 	overflow-x: hidden;
 }
 
-#page.active {
-	.bg-container,
-	#laptop-3d-canvas-container {
-		display: none;
-	}
+main {
+	position: relative;
+	top: 170vh;
+	color: $off-black;
+	z-index: 240;
+	transition: background-color .5s;
 
-	main {
-		background-color: $off-white;
-
-		.site-home-link {
-			position: fixed;
-			top: vw(64);
-			left: 50vw;
-			transform: translateX(-50%);
-		}
+	#site-home-link {
+		position: fixed;
+		top: vw(64);
+		left: 50vw;
+		opacity: 0;
+		transform: translateX(-50%) translatey(-100px);
+		transition: all .2s;
 
 		.site-logo {
 			max-width: vw(220)
@@ -45,27 +44,18 @@ body {
 	}
 }
 
-main {
-	position: relative;
-	top: 0;
-	color: $off-black;
-	z-index: 240;
-	padding-top: 170vh;
-}
+#page.active {
+	// .bg-container,
+	// #laptop-3d-canvas-container {
+	// 	display: none;
+	// }
 
-/* GRADIENT V2 */
-@mixin horizontalcenter() {
-	left: 50%;
-	transform: translatex(-50%);
-}
+	main {
+		background-color: $off-white;
 
-@mixin verticalcenter() {
-	top: 50%;
-	transform: translatey(-50%);
-}
-
-@mixin centercenter() {
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
+		#site-home-link {
+			opacity: 1;
+			transform: translateX(-50%) translatey(0px);
+		}
+	}
 }

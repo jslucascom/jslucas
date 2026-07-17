@@ -4,7 +4,7 @@
  */
 
 import * as THREE from 'three';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 export function initLaptop3D() {
 	// ===== DEVELOPMENT TOGGLE =====
@@ -26,8 +26,7 @@ export function initLaptop3D() {
 
 	// Get asset paths from data attributes
 	const assetsPath = {
-		models: container.dataset.modelsPath,
-		textures: container.dataset.texturesPath
+		models: container.dataset.modelsPath
 	};
 
 	// ============================================
@@ -68,6 +67,14 @@ export function initLaptop3D() {
 		floatingEnabled: false,
 		floatingAmount: 0.15,
 		floatingSpeed: 0.0005,
+
+		// Lid hinge (degrees). Drives the "Bevels_2" node directly — this is
+		// the model's screen/lid assembly, and its hinge rotates on a single
+		// local axis, so we set it ourselves each frame instead of playing
+		// the model's baked open-close clip. Tracks the same scroll progress
+		// as rotationX/rotationY above.
+		startLidAngle: 45,
+		endLidAngle: 90,
 
 		// Scroll animation height
 		scrollAnimationHeight: 150,
@@ -257,13 +264,25 @@ export function initLaptop3D() {
 
 	// Model variables
 	let laptop = null;
+	let lidNode = null; // "Bevels_2" — the model's screen/lid assembly, hinge-rotated directly (see updateLaptopTransform)
 	let smoothProgress = 0;
 	let targetProgress = 0;
 	let growSmoothProgress = 0; // stage-2 scale growth (midScale -> endScale), see animationControls.growScrollStart
 	let growTargetProgress = 0;
 	let baseScale = 1;
 	let viewportScaleFactor = 1; // NEW: Scale based on window width
-	const textureLoader = new THREE.TextureLoader();
+
+	// The lid's hinge keyframes (found by scanning the GLB's baked "open/close"
+	// clip) rotate purely around local axis (-1, 0, 0) — the quaternion at
+	// every sampled keyframe has zero Y/Z component. Reusing that exact axis
+	// means setLidAngle() below reproduces the model's own hinge motion
+	// exactly, just clamped to whatever start/end angle we choose.
+	const LID_HINGE_AXIS = new THREE.Vector3(-1, 0, 0);
+
+	function setLidAngle(degrees) {
+		if (!lidNode) return;
+		lidNode.quaternion.setFromAxisAngle(LID_HINGE_AXIS, THREE.MathUtils.degToRad(degrees));
+	}
 
 	// ============================================
 	// SHADOW PLANE - Creates shadow underneath objects
@@ -280,152 +299,61 @@ export function initLaptop3D() {
 	scene.add(shadowPlane);
 	console.log('✓ Shadow plane added (disabled)');
 
-	// Texture filenames
-	const textureFiles = {
-		color: assetsPath.textures + '/lap-top-001-col-metalness-4k.png',
-		normal: assetsPath.textures + '/lap-top-001-nrm-metalness-4k.png',
-		roughness: assetsPath.textures + '/lap-top-001-roughness-metalness-4k.png',
-		metalness: assetsPath.textures + '/lap-top-001-metalness-metalness-4k.png',
-		ao: assetsPath.textures + '/lap-top-001-ao-metalness-4k.png'
-	};
+	// Model file. The GLB embeds its own PBR textures and materials, so
+	// there's no separate texture-loading pass to wait on — load straight in.
+	const modelFile = assetsPath.models + '/macbook-lg.glb';
 
-	// Load textures
-	const textures = {
-		color: null,
-		normal: null,
-		roughness: null,
-		metalness: null,
-		ao: null
-	};
-
-	console.log('Starting texture loading from:', assetsPath.textures);
-
-	// Load all textures with error handling
-	Promise.all([
-		new Promise((resolve, reject) => {
-			textureLoader.load(
-				textureFiles.color,
-				(texture) => {
-					texture.colorSpace = THREE.SRGBColorSpace;
-					textures.color = texture;
-					console.log('✓ Color texture loaded');
-					resolve();
-				},
-				undefined,
-				(error) => {
-					console.error('✗ Failed to load color texture:', error);
-					reject(error);
-				}
-			);
-		}),
-		new Promise((resolve, reject) => {
-			textureLoader.load(
-				textureFiles.normal,
-				(texture) => {
-					textures.normal = texture;
-					console.log('✓ Normal texture loaded');
-					resolve();
-				},
-				undefined,
-				(error) => {
-					console.error('✗ Failed to load normal texture:', error);
-					reject(error);
-				}
-			);
-		}),
-		new Promise((resolve, reject) => {
-			textureLoader.load(
-				textureFiles.roughness,
-				(texture) => {
-					textures.roughness = texture;
-					console.log('✓ Roughness texture loaded');
-					resolve();
-				},
-				undefined,
-				(error) => {
-					console.error('✗ Failed to load roughness texture:', error);
-					reject(error);
-				}
-			);
-		}),
-		new Promise((resolve, reject) => {
-			textureLoader.load(
-				textureFiles.metalness,
-				(texture) => {
-					textures.metalness = texture;
-					console.log('✓ Metalness texture loaded');
-					resolve();
-				},
-				undefined,
-				(error) => {
-					console.error('✗ Failed to load metalness texture:', error);
-					reject(error);
-				}
-			);
-		}),
-		new Promise((resolve, reject) => {
-			textureLoader.load(
-				textureFiles.ao,
-				(texture) => {
-					textures.ao = texture;
-					console.log('✓ AO texture loaded');
-					resolve();
-				},
-				undefined,
-				(error) => {
-					console.error('✗ Failed to load AO texture:', error);
-					reject(error);
-				}
-			);
-		})
-	]).then(() => {
-		console.log('✓ All textures loaded successfully');
-		loadLaptopModel();
-	}).catch((error) => {
-		console.error('✗ Failed to load one or more textures:', error);
-		showError(`Failed to load textures from ${assetsPath.textures}<br><br>Error: ${error.message || 'Unknown error'}`);
-	});
+	loadLaptopModel();
 
 	function loadLaptopModel() {
-		const loader = new OBJLoader();
-		console.log('Starting to load model from:', assetsPath.models + '/lap-top.obj');
+		const loader = new GLTFLoader();
+		console.log('Starting to load model from:', modelFile);
 
 		loader.load(
-			assetsPath.models + '/lap-top.obj',
-			(obj) => {
+			modelFile,
+			(gltf) => {
 				console.log('✓ Model loaded successfully!');
-				laptop = obj;
+				laptop = gltf.scene;
 
-				const material = new THREE.MeshStandardMaterial({
-					map: textures.color,
-					normalMap: textures.normal,
-					roughnessMap: textures.roughness,
-					metalnessMap: textures.metalness,
-					aoMap: textures.ao,
-					metalness: 0.9,
-					roughness: 0.3,
-				});
+				// "Bevels_2" is the model's lid/screen assembly — its baked
+				// clip is the open-close hinge, but we drive that angle
+				// ourselves (see setLidAngle/animationControls.startLidAngle)
+				// rather than playing the clip, so the hinge can track scroll
+				// progress between whatever start/end angle we choose instead
+				// of the model's own fixed open-then-close-again motion.
+				lidNode = laptop.getObjectByName('Bevels_2');
+				if (lidNode) {
+					setLidAngle(animationControls.startLidAngle);
+				} else {
+					console.warn('⚠ Could not find "Bevels_2" lid node on this model — lid angle controls will have no effect.');
+				}
 
-				// Screen material — deliberately UNLIT. A real screen doesn't
-				// reflect room light, it just displays at its own fixed
-				// brightness. Using a lit material here meant every time the
-				// lid/keyboard lights were brightened, the screen caught the
-				// same boost as a specular hotspot, forcing you to compensate
-				// by turning your actual laptop brightness down. MeshBasicMaterial
-				// ignores scene lighting entirely, so this now always renders
-				// at the texture's true brightness no matter what the rest of
-				// the lighting is doing.
-				const glassMaterial = new THREE.MeshBasicMaterial({
-					map: textures.color,
-				});
+				// Screen material — deliberately UNLIT, same reasoning as the
+				// previous OBJ setup: a real screen displays at its own fixed
+				// brightness rather than reflecting room light, so a lit
+				// material here would catch every lighting tweak as a
+				// specular hotspot.
+				//
+				// The actual display panel is "Material.002" — confirmed by
+				// bounding box (roughly 1.04 x 0.65 units, matching the full
+				// screen face). It ships with a baked-in photo of the model
+				// author's own Sketchfab profile (trains and all) as its
+				// baseColorTexture, which is what was showing through.
+				// "Glass" (previously swapped here) turned out to be an
+				// unrelated tiny sliver — a lens/indicator detail, not the
+				// screen — so it's left alone now. Flat unlit off-white
+				// (matching $off-white / #EDE9DE from the site's own palette)
+				// replaces the baked photo, reproducing the old texture's
+				// "screen glowing on" look without needing an image at all.
+				const screenMaterial = new THREE.MeshBasicMaterial({ color: 0xede9de });
 
 				laptop.traverse((child) => {
 					if (child.isMesh) {
-						child.material = child.name === 'glass' ? glassMaterial : material;
+						if (child.material && child.material.name === 'Material.002') {
+							child.material = screenMaterial;
+						}
 						child.castShadow = true;
 						child.receiveShadow = true;
-						child.geometry.computeVertexNormals();
-						console.log('Applied material to mesh:', child.name);
 					}
 				});
 
@@ -476,8 +404,8 @@ export function initLaptop3D() {
 				}
 			},
 			(error) => {
-				console.error('✗ Error loading OBJ model:', error);
-				showError(`Failed to load lap-top.obj file.<br><br>Expected location: ${assetsPath.models}/lap-top.obj<br><br>Error: ${error.message || 'Unknown error'}`);
+				console.error('✗ Error loading GLB model:', error);
+				showError(`Failed to load macbook-lg.glb file.<br><br>Expected location: ${modelFile}<br><br>Error: ${error.message || 'Unknown error'}`);
 			}
 		);
 	}
@@ -572,6 +500,14 @@ export function initLaptop3D() {
 		// Animate X-axis rotation
 		const xEasedProgress = easeOutCubic(smoothProgress);
 		laptop.rotation.x = animationControls.startRotationX + (xEasedProgress * animationControls.endRotationX);
+
+		// Animate lid hinge angle (startLidAngle -> endLidAngle), same
+		// progress curve as the Y-rotation above.
+		if (lidNode) {
+			const lidAngle = animationControls.startLidAngle +
+				(easedProgress * (animationControls.endLidAngle - animationControls.startLidAngle));
+			setLidAngle(lidAngle);
+		}
 
 		// Animate scale — stage 1 (startScale -> midScale) tracks the main
 		// scroll progress same as rotation/position; stage 2 (midScale ->
