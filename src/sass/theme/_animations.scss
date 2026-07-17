@@ -123,3 +123,29 @@
 		transform: rotate(0deg);
 	}
 }
+
+@keyframes scroll {
+	0% {
+		transform: scaleY(0);
+		transform-origin: top;
+	}
+
+	25% {
+		transform: scaleY(1);
+		transform-origin: top;
+	}
+
+	26% {
+		transform-origin: bottom;
+	}
+
+	50% {
+		transform: scaleY(0);
+		transform-origin: bottom;
+	}
+
+	100% {
+		transform: scaleY(0);
+		transform-origin: bottom;
+	}
+}

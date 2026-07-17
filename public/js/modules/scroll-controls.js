@@ -7,26 +7,16 @@
  *
  * Requires GSAP + ScrollTrigger + SplitType (all loaded globally in
  * layout.astro).
+ *
+ * This module also owns every scroll-trigger "when"/"how long" setting for
+ * the 3D laptop (public/js/modules/laptop-3d.js) — trigger depth, stage
+ * duration, reveal lead time. laptop-3d.js itself has no scroll-reading
+ * logic any more; it just plays whatever target it's told to via
+ * setLaptopSpinTarget()/setLaptopGrowTarget() (see initLaptopSpin()/
+ * initLaptopGrow() below).
  */
 
-// ─── #page "active" state ────────────────────────────────────────────────
-const pageActiveConditions = {};
-function setPageActiveCondition(name, isActive) {
-	pageActiveConditions[name] = isActive;
-	const page = document.querySelector("#page");
-	if (!page) return;
-
-	const wasActive = page.classList.contains("active");
-	const nowActive = Object.values(pageActiveConditions).some(Boolean);
-	page.classList.toggle("active", nowActive);
-
-	// Lets other init*() functions (e.g. initIntroColumnsReveal) react to
-	// #page gaining/losing "active" without each needing its own polling
-	// or MutationObserver.
-	if (nowActive !== wasActive) {
-		page.dispatchEvent(new CustomEvent("page:activechange", { detail: nowActive }));
-	}
-}
+import { setLaptopSpinTarget, setLaptopGrowTarget } from "/jslucas/js/modules/laptop-3d.js";
 
 // ─── Active section ─────────────────────────────────────────────────────
 function initActiveSection() {
@@ -97,44 +87,68 @@ function initTextSplit() {
 	gsap.set("[text-split]", { opacity: 1 });
 }
 
-// ─── Intro stat columns reveal (each column rises up, staggered) ────────
-//
-// Triggered by #page gaining "active" (see setPageActiveCondition) rather
-// than each column's own scroll position, since all 4 columns sit
-// side-by-side and would otherwise reveal at ~the same scroll depth anyway.
-// Whole columns start hidden and rise up one-by-one, .2s apart. The
-// heading/paragraph split-text inside each column still gets its own
-// letter-by-letter reveal, triggered separately as it becomes visible (see
-// the generic [letters-slide-up] handling above in initTextSplit).
-function initIntroColumnsReveal() {
-	const row = document.querySelector("[data-intro-columns]");
-	const page = document.querySelector("#page");
-	if (!row || !page) return;
+// ─── Laptop spin (startY -> midY / startScale -> midScale) ──────────────
+const laptopSpinDurationMs = 1600; // full 0->1 traverse
+const laptopSpinRevealLeadMs = 300; // initIntroReveal plays this long before the spin visually concludes — see initIntroReveal()
+const laptopSpinCloseDelayMs = 800; // how long the laptop stays visibly open once scrolled back to the top before it actually starts closing — matches how long initIntroReveal's reverse takes to play out (burst/spinningText: 1.2s at timeScale(2) = 0.6s, which outlasts the 0.2s h1Chars reverse), so the text finishes clearing away first, then the laptop starts visibly closing behind it. Update this together with initIntroReveal()'s growDuration/timeScale if either changes.
 
-	const columns = row.querySelectorAll(".col");
-	if (!columns.length) return;
+let laptopSpinRevealFired = false; // guards against re-dispatching "laptop:spinreveal" while sitting at the top of the spin, and against dispatching "laptop:spinreverse" when the reveal never actually played
+let laptopSpinRevealTimeoutId = null; // pending "fire the reveal" timer
+let laptopSpinCloseTimeoutId = null; // pending "start closing" timer
 
-	const master = gsap.timeline({ paused: true });
-	master.from(columns, {
-		opacity: 0,
-		y: 40,
-		duration: 0.6,
-		ease: "power1.out",
-		stagger: 0.2 // each column rises up .2s after the previous one
-	});
+function initLaptopSpin() {
+	ScrollTrigger.create({
+		start: 0,
+		onEnter: () => {
+			// Scrolling back down cancels any pending delayed close below
+			// and reopens right away — the delay only applies on the way
+			// out (onLeaveBack), not the way in.
+			if (laptopSpinCloseTimeoutId) {
+				clearTimeout(laptopSpinCloseTimeoutId);
+				laptopSpinCloseTimeoutId = null;
+			}
 
-	page.addEventListener("page:activechange", (e) => {
-		if (e.detail) {
-			master.play();
-		} else {
-			master.reverse();
+			setLaptopSpinTarget(1, laptopSpinDurationMs);
+
+			if (!laptopSpinRevealFired && !laptopSpinRevealTimeoutId) {
+				laptopSpinRevealTimeoutId = setTimeout(() => {
+					laptopSpinRevealTimeoutId = null;
+					laptopSpinRevealFired = true;
+					window.dispatchEvent(new CustomEvent("laptop:spinreveal"));
+				}, Math.max(laptopSpinDurationMs - laptopSpinRevealLeadMs, 0));
+			}
+		},
+		onLeaveBack: () => {
+			if (laptopSpinCloseTimeoutId) return; // already closing
+
+			if (laptopSpinRevealTimeoutId) {
+				clearTimeout(laptopSpinRevealTimeoutId);
+				laptopSpinRevealTimeoutId = null;
+			}
+
+			if (laptopSpinRevealFired) {
+				// The reveal had already played — undo it immediately, but
+				// hold the laptop itself open for laptopSpinCloseDelayMs so
+				// the text finishes clearing away before the laptop starts
+				// visibly closing behind it, rather than both moving at once.
+				laptopSpinRevealFired = false;
+				window.dispatchEvent(new CustomEvent("laptop:spinreverse"));
+				laptopSpinCloseTimeoutId = setTimeout(() => {
+					laptopSpinCloseTimeoutId = null;
+					setLaptopSpinTarget(0, laptopSpinDurationMs);
+				}, laptopSpinCloseDelayMs);
+			} else {
+				// Reveal never played (scrolled back up before the spin
+				// finished) — nothing to wait on, close right away.
+				setLaptopSpinTarget(0, laptopSpinDurationMs);
+			}
 		}
 	});
 }
 
 // ─── Intro reveal (burst, spinning-text-container, h1 split text) ───────
 function initIntroReveal() {
-	const burst = document.querySelector("#intro .h1-container .burst");
+	const burst = document.querySelector("#intro .burst");
 	const spinningText = document.querySelector("#intro .spinning-text-container");
 
 	const growDuration = 1.2; // matches the old grow-burst/grow-half animation-duration
@@ -164,7 +178,6 @@ function initIntroReveal() {
 	const h1Chars = h1 ? h1.querySelectorAll(".char") : null;
 	const h1Timeline = h1Chars ? gsap.timeline({ paused: true }) : null;
 	if (h1Timeline) {
-		// Staggered reveal on the way in...
 		h1Timeline.from(h1Chars, {
 			yPercent: 120,
 			duration: 0.8,
@@ -175,59 +188,83 @@ function initIntroReveal() {
 
 	if (!growTweens.length && !h1Timeline) return;
 
-	ScrollTrigger.create({
-		trigger: "#intro",
-		start: () => window.innerHeight * 1.4, // 140vh, recalculated on resize
-		onEnter: () => {
-			growTweens.forEach((tween) => tween.timeScale(1).play());
-			if (h1Timeline) h1Timeline.play();
-		},
-		onLeaveBack: () => {
-			growTweens.forEach((tween) => tween.timeScale(2).reverse());
-			if (h1Chars) {
-				gsap.to(h1Chars, {
-					yPercent: 120,
-					duration: 0.2,
-					ease: "power1.in",
-					onComplete: () => h1Timeline.progress(0).pause()
-				});
-			}
+	window.addEventListener("laptop:spinreveal", () => {
+		growTweens.forEach((tween) => tween.timeScale(1).play());
+		if (h1Timeline) h1Timeline.play();
+	});
+
+	// Runs at 2x speed on the way back so the text clears out promptly
+	// rather than lingering while the laptop starts closing.
+	window.addEventListener("laptop:spinreverse", () => {
+		growTweens.forEach((tween) => tween.timeScale(2).reverse());
+		if (h1Chars) {
+			gsap.to(h1Chars, {
+				yPercent: 120,
+				duration: 0.2,
+				ease: "power1.in",
+				onComplete: () => {
+					if (h1Timeline) h1Timeline.progress(0).pause();
+				}
+			});
 		}
 	});
 }
 
-// ─── Intro heading scale (laptop stage-2 growth window) ─────────────────
-function initH1GrowScale() {
-	const h1Container = document.querySelector("#intro .h1-container");
-	const spinningText = document.querySelector("#intro .spinning-text-container");
-	if (!h1Container) return;
+// ─── Laptop grow (midY -> endY / midScale -> endScale) ──────────────────
+const laptopGrowDurationMs = 1200;
+const laptopGrowRevealLeadMs = 700; // laptop:growreveal fires this long before the grow stage visually concludes — see initPageActiveScrollDepth()
 
-	const baseScale = 0.8; // matches _section.scss's default .h1-container transform
-	const growScale = 1;
+let laptopGrowRevealTimeoutId = null; // pending "fire the reveal" timer
 
-	window.addEventListener("laptop3d:growprogress", (e) => {
-		const progress = e.detail;
-		const scale = baseScale + progress * (growScale - baseScale);
-		h1Container.style.transform = `scale(${scale})`;
+function initLaptopGrow() {
+	ScrollTrigger.create({
+		start: () => window.innerHeight * 1, // 100vh, recalculated on resize
+		onEnter: () => {
+			setLaptopGrowTarget(1, laptopGrowDurationMs);
 
-		// #page gets "active" the instant .h1-container reaches scale(1) —
-		// toggled off again if scrolled back before growth completes, so it
-		// stays in sync rather than getting stuck on after one visit.
-		setPageActiveCondition("h1Grown", progress >= 1);
+			if (laptopGrowRevealTimeoutId) clearTimeout(laptopGrowRevealTimeoutId);
+			laptopGrowRevealTimeoutId = setTimeout(() => {
+				laptopGrowRevealTimeoutId = null;
+				window.dispatchEvent(new CustomEvent("laptop:growreveal"));
+			}, Math.max(laptopGrowDurationMs - laptopGrowRevealLeadMs, 0));
+		},
+		onLeaveBack: () => {
+			setLaptopGrowTarget(0, laptopGrowDurationMs);
 
-		// Same reasoning as above: toggled (not just added) so it stays in
-		// sync if the user scrolls back to before growth starts.
-		if (spinningText) spinningText.classList.toggle("goodbye", progress > 0);
+			if (laptopGrowRevealTimeoutId) {
+				clearTimeout(laptopGrowRevealTimeoutId);
+				laptopGrowRevealTimeoutId = null;
+			}
+			window.dispatchEvent(new CustomEvent("laptop:growreverse"));
+		}
 	});
 }
 
-// ─── #page active past 400vh scrolled ───────────────────────────────────
+// ─── #page active — flips just before the laptop grow stage concludes ───
+const pageActiveConditions = {};
+function setPageActiveCondition(name, isActive) {
+	pageActiveConditions[name] = isActive;
+	const page = document.querySelector("#page");
+	if (!page) return;
+
+	const wasActive = page.classList.contains("active");
+	const nowActive = Object.values(pageActiveConditions).some(Boolean);
+	page.classList.toggle("active", nowActive);
+
+	// Lets other init*() functions react to #page gaining/losing "active"
+	// without each needing its own polling or MutationObserver.
+	if (nowActive !== wasActive) {
+		page.dispatchEvent(new CustomEvent("page:activechange", { detail: nowActive }));
+	}
+}
+// Driven by initLaptopGrow() above, not by scroll position directly — same
+// pattern as initIntroReveal() listening to initLaptopSpin()'s events:
+//   - laptop:growreveal fires laptopGrowRevealLeadMs before the grow stage
+//     visually concludes.
+//   - laptop:growreverse fires the moment the grow stage reverses.
 function initPageActiveScrollDepth() {
-	ScrollTrigger.create({
-		start: () => window.innerHeight * 3.4, // 340vh, recalculated on resize
-		onEnter: () => setPageActiveCondition("scrolledPast400vh", true),
-		onLeaveBack: () => setPageActiveCondition("scrolledPast400vh", false)
-	});
+	window.addEventListener("laptop:growreveal", () => setPageActiveCondition("scrolledPastGrow", true));
+	window.addEventListener("laptop:growreverse", () => setPageActiveCondition("scrolledPastGrow", false));
 }
 
 /**
@@ -241,8 +278,8 @@ export function initScrollControls() {
 
 	initActiveSection();
 	initTextSplit();
-	initIntroColumnsReveal();
+	initLaptopSpin();
 	initIntroReveal();
-	initH1GrowScale();
+	initLaptopGrow();
 	initPageActiveScrollDepth();
 }

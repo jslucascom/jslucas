@@ -258,8 +258,8 @@
 
 .icon-bullet {
 	display: block;
-	min-width: vw(21);
-	min-height: vw(21);
+	width: 0;
+	height: 0;
 	max-width: vw(21);
 	max-height: vw(21);
 	border-radius: vw(12);

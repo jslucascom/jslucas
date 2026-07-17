@@ -5,15 +5,14 @@ section {
 	align-items: center;
 	justify-content: center;
 	font-size: 2rem;
+	min-width: 100vw;
 	min-height: 100vh;
 	position: relative;
 
-	article {
-		position: relative;
-		width: 100vw;
-		min-height: 200vh;
+	&.sticky-container {
+		min-height: 300vh;
 
-		.section-inner {
+		.sticky-inner {
 			position: sticky;
 			top: 0;
 			min-height: 100vh;
@@ -26,11 +25,9 @@ section {
 	}
 
 	&#hero {
-		width: 100vw;
 		justify-content: flex-start;
 		position: absolute;
 		top: 0;
-		min-height: 400vh;
 
 		#intro-heading-canvas-container {
 			position: absolute;
@@ -48,21 +45,56 @@ section {
 			}
 		}
 
-		#hero-overlay {
-			display: flex;
-			flex-direction: column;
-			justify-content: space-between;
-			z-index: 10;
-			color: $off-black-1;
-			position: sticky;
-			top: 0;
-			left: 0;
-			min-height: 100vh;
+		.mouse {
+			height: 60px;
+			width: 32px;
+			opacity: .8;
+			border: 3px solid $off-white;
+			border-radius: 32px;
+			position: absolute;
+			left: 50%;
+			bottom: 10vh;
+			transform: translateX(-50%);
 
-			.laptop-shadow {
-				transform: scale(.6);
+			span {
+				width: vw(280);
+				text-align: center;
+				display: inline-block;
+				position: absolute;
+				color: $off-white;
+				left: 50%;
+				top: -50px;
+				transform: translateX(-50%);
+			}
+
+			&::before {
+				content: '';
+				height: 20px;
+				width: 2px;
+				background: $off-white;
+				position: absolute;
+				left: 0;
+				right: 0;
+				margin: 0 auto;
+				top: 10px;
+				border-radius: 1px;
+				transform: scaleY(0);
+				animation: scroll 2s linear infinite;
+			}
+
+			&::after {
+				content: '';
+				height: 10vh;
+				width: 1px;
+				background: $off-white;
+				position: absolute;
+				left: 0;
+				right: 0;
+				margin: 0 auto;
+				bottom: -10vh;
 				opacity: .5;
-				animation: shadow-pulse 12s ease infinite;
+				// transform: scaleY(0);
+				// animation: scroll 2s linear infinite;
 			}
 		}
 	}
@@ -71,15 +103,15 @@ section {
 		justify-content: start;
 		height: 350vh;
 
-		.h1-container {
+		.sticky-inner {
 			opacity: .9;
-			position: fixed;
+			position: sticky;
 			top: 0;
 			height: 100vh;
 			transform: scale(.8);
 			transform-origin: center center;
 			padding-top: vw(120);
-			transition: opacity .5s;
+			transition: all 1.8s;
 
 			.burst {
 				transform: scale(0);
@@ -92,7 +124,7 @@ section {
 		}
 
 		.spinning-text-container {
-			display:none;
+			display: none;
 			position: absolute;
 			top: vw(160);
 			transform: scale(1.4);
@@ -142,113 +174,9 @@ section {
 				opacity: 0;
 			}
 		}
-
-		#usp {
-			.col {
-				opacity: 0;
-			}
-		}
 	}
 
 	&#about {
 		min-height: 200vh;
-	}
-
-	// &#values {
-	// 	/* Let GSAP control the height via pinning — no fixed height needed */
-	// 	min-height: 400vh;
-	// 	justify-content: flex-start;
-
-	// 	article {
-	// 		min-height: unset;
-	// 		/* override the default 200vh — GSAP creates the scroll space */
-	// 	}
-
-	// 	.d-grid {
-	// 		width: 100vw;
-	// 		height: 100vh;
-	// 		padding: 15vh 10vw 10vh;
-	// 		display: grid;
-	// 		grid-template-columns: repeat(3, 1fr);
-	// 		grid-template-rows: auto 1fr;
-	// 		gap: vw(0) vw(40);
-	// 	}
-
-	// 	.top {
-	// 		grid-column: 1 / -1;
-	// 	}
-
-	// 	.card-wrapper {
-	// 		position: relative;
-	// 		display: flex;
-	// 		justify-content: center;
-
-	// 		svg {
-	// 			max-width: vw(300);
-	// 		}
-
-	// 		img {
-	// 			max-width: vw(300);
-	// 			position: absolute;
-	// 			top: 50%;
-	// 			left: 50%;
-	// 			transform: translateX(-50%) translateY(-50%);
-	// 		}
-	// 	}
-
-	// 	.values-title {
-	// 		position: sticky;
-	// 		top: vw(60);
-	// 		left: vw(120);
-	// 		// opacity: 0.15; 
-	// 		pointer-events: none;
-	// 		z-index: 0;
-	// 	}
-	// 	/* ─── Values Section ──────────────────────────────────────────────────────── */
-
-	// 	/* The sticky container GSAP will pin — needs to fill the viewport */
-	// 	.values-sticky {
-	// 		position: relative;
-	// 		width: 100%;
-	// 		height: 100vh;
-	// 		display: flex;
-	// 		flex-direction: column;
-	// 		align-items: center;
-	// 		justify-content: center;
-	// 		overflow: hidden; /* keeps off-screen cards invisible */
-	// 	}
-
-	// 	/* Three cards side by side, left-aligned */
-	// 	.values-cards {
-	// 		display: flex;
-	// 		gap: vw(32);
-	// 		align-items: center;
-	// 		justify-content: space-evenly;
-	// 		width: 100%;
-	// 		height: 100vh;
-	// 		padding: 0 vw(120);
-	// 	}
-
-	// 	/* Each card wrapper — GSAP translates this */
-	// 	.value-card-wrap {
-	// 		flex: 0 0 auto;
-
-	// 		/* Initial off-screen state set by GSAP - no CSS transform to avoid conflicts */
-	// 		opacity: 0;
-	// 	}
-
-	// 	/* The card image itself */
-	// 	.value-card {
-	// 		display: block;
-	// 		width: vw(360);
-	// 		max-width: 420px;
-	// 		height: auto;
-	// 	}
-	// }
-}
-
-#page.active {
-	.h1-container {
-		opacity: 1;
 	}
 }

@@ -5,12 +5,12 @@ import SvgFilter from "./svg-filter.astro";
 export interface Props {
 	CustomClass?: string;
 }
-const { CustomClass = "section section-intro" } = Astro.props;
+const { CustomClass = "section section-intro sticky-container" } = Astro.props;
 ---
 
 <section class={CustomClass} id="intro" data-section="intro">
 	<div
-		class="container-fluid justify-content-center align-content-center h1-container"
+		class="container-fluid justify-content-center align-content-center sticky-inner"
 	>
 		<img src="/jslucas/images/hire-a.svg" alt="starburst" class="burst" />
 		<h1
