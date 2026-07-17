@@ -3,57 +3,41 @@ import SvgSpinningText from "./svg-spinning-text.astro";
 import SvgFilter from "./svg-filter.astro";
 
 export interface Props {
-	CustomClass?: string;
+CustomClass?: string;
 }
 const { CustomClass = "section section-intro sticky-container" } = Astro.props;
 ---
 
 <section class={CustomClass} id="intro" data-section="intro">
-	<div
-		class="container-fluid justify-content-center align-content-center sticky-inner"
-	>
-		<img src="/jslucas/images/hire-a.svg" alt="starburst" class="burst" />
-		<h1
-			text-split
-			letters-slide-up
-			trigger-container
-			class="text-center"
-			id="h1"
-		>
-			<span class="h1 mt-3 mb-5"
-				>Product <span>Designer</span>
-				<br /><em>who</em> codes!</span
-			>
-		</h1>
-		<div class="spinning-text-container">
-			<SvgSpinningText />
-			<SvgFilter shape="circle" />
+	<div class="container-fluid justify-content-center align-content-center sticky-inner">
+		<div class="row">
+			<img src="/jslucas/images/hire-a.svg" alt="starburst" class="burst" />
+			<h1 text-split letters-slide-up trigger-container class="text-center" id="h1" class="h1 mt-3 mb-5">
+				Product <span>Designer</span>
+				<br /><em>who</em> codes!
+			</h1>
+			<div class="spinning-text-container">
+				<SvgSpinningText />
+				<SvgFilter shape="circle" />
+			</div>
 		</div>
-		<div  data-intro-columns class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 py-5" id="usp">
+		<div data-intro-columns class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 py-5" id="usp">
 			<div class="col d-flex align-items-start gap-3">
 				<div class="icon-bullet pink mt-1"></div>
 				<div>
-					<h3
-						text-split
-						letters-slide-up
-						class="mb-2 fs-4"
-					>
+					<h3 text-split letters-slide-up class="mb-2 fs-4">
 						User Experience
 					</h3>
 					<p text-split letters-slide-up class="serif">
-						Making user-informed decisions that lead to better
-						questions and better outcomes.
+						Making user-informed decisions that lead to better questions
+						and better outcomes.
 					</p>
 				</div>
 			</div>
 			<div class="col d-flex align-items-start gap-3">
 				<div class="icon-bullet blue mt-1"></div>
 				<div>
-					<h3
-						text-split
-						letters-slide-up
-						class="mb-2 fs-4"
-					>
+					<h3 text-split letters-slide-up class="mb-2 fs-4">
 						Design Systems
 					</h3>
 					<p text-split letters-slide-up class="serif">
@@ -65,27 +49,19 @@ const { CustomClass = "section section-intro sticky-container" } = Astro.props;
 			<div class="col d-flex align-items-start gap-3">
 				<div class="icon-bullet orange mt-1"></div>
 				<div>
-					<h3
-						text-split
-						letters-slide-up
-						class="mb-2 fs-4"
-					>
+					<h3 text-split letters-slide-up class="mb-2 fs-4">
 						User Interface
 					</h3>
 					<p text-split letters-slide-up class="serif">
-						Crafting polished, engaging interfaces without
-						sacrificing clarity or accessibility.
+						Crafting polished, engaging interfaces without sacrificing
+						clarity or accessibility.
 					</p>
 				</div>
 			</div>
 			<div class="col d-flex align-items-start gap-3">
 				<div class="icon-bullet green mt-1"></div>
 				<div>
-					<h3
-						text-split
-						letters-slide-up
-						class="mb-2 fs-4"
-					>
+					<h3 text-split letters-slide-up class="mb-2 fs-4">
 						Front-end Development
 					</h3>
 					<p text-split letters-slide-up class="serif">

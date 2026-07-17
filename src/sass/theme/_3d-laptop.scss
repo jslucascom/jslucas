@@ -2,17 +2,25 @@
 #laptop-3d-canvas-container {
 	position: absolute;
 	top: 0;
-	left: 0;
 	width: 100vw;
-	height: 480vh;
+	height: 500vh;
 	z-index: 220;
 	pointer-events: none;
 
-	canvas {
+	#laptop-3d-canvas-inner {
 		position: sticky;
 		top: 0;
-		display: block;
+		width: 100vw;
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+		padding-top: vw(0);
+		padding-bottom: vw(0);
 		z-index: 800;
+
+		canvas {
+			z-index: 800;
+		}
 	}
 }
 

@@ -1,22 +1,9 @@
 /**
  * Central home for this site's GSAP / ScrollTrigger-driven scroll effects.
- *
- * SplitType itself now comes from a CDN script (see layout.astro), matching
- * how GSAP/ScrollTrigger are already loaded, rather than reaching into
- * main.js's old private bundled copy.
- *
- * Requires GSAP + ScrollTrigger + SplitType (all loaded globally in
- * layout.astro).
- *
- * This module also owns every scroll-trigger "when"/"how long" setting for
- * the 3D laptop (public/js/modules/laptop-3d.js) — trigger depth, stage
- * duration, reveal lead time. laptop-3d.js itself has no scroll-reading
- * logic any more; it just plays whatever target it's told to via
- * setLaptopSpinTarget()/setLaptopGrowTarget() (see initLaptopSpin()/
- * initLaptopGrow() below).
+ * Owns every "when"/"how long" setting for the 3D laptop's spin stage (laptop-3d.js has none of its own) via setLaptopSpinTarget().
  */
 
-import { setLaptopSpinTarget, setLaptopGrowTarget } from "/jslucas/js/modules/laptop-3d.js";
+import { setLaptopSpinTarget } from "/jslucas/js/modules/laptop-3d.js";
 
 // ─── Active section ─────────────────────────────────────────────────────
 function initActiveSection() {
@@ -87,12 +74,12 @@ function initTextSplit() {
 	gsap.set("[text-split]", { opacity: 1 });
 }
 
-// ─── Laptop spin (startY -> midY / startScale -> midScale) ──────────────
+// ─── Laptop spin (startY -> endY / startScale -> endScale) ──────────────
 const laptopSpinDurationMs = 1600; // full 0->1 traverse
-const laptopSpinRevealLeadMs = 300; // initIntroReveal plays this long before the spin visually concludes — see initIntroReveal()
-const laptopSpinCloseDelayMs = 800; // how long the laptop stays visibly open once scrolled back to the top before it actually starts closing — matches how long initIntroReveal's reverse takes to play out (burst/spinningText: 1.2s at timeScale(2) = 0.6s, which outlasts the 0.2s h1Chars reverse), so the text finishes clearing away first, then the laptop starts visibly closing behind it. Update this together with initIntroReveal()'s growDuration/timeScale if either changes.
+const laptopSpinRevealLeadMs = 300; // initIntroReveal plays this long before the spin visually concludes
+const laptopSpinCloseDelayMs = 800; // delay before the laptop visibly closes after scrolling back up, so text clears first
 
-let laptopSpinRevealFired = false; // guards against re-dispatching "laptop:spinreveal" while sitting at the top of the spin, and against dispatching "laptop:spinreverse" when the reveal never actually played
+let laptopSpinRevealFired = false; // guards duplicate spinreveal/spinreverse dispatches
 let laptopSpinRevealTimeoutId = null; // pending "fire the reveal" timer
 let laptopSpinCloseTimeoutId = null; // pending "start closing" timer
 
@@ -100,9 +87,7 @@ function initLaptopSpin() {
 	ScrollTrigger.create({
 		start: 0,
 		onEnter: () => {
-			// Scrolling back down cancels any pending delayed close below
-			// and reopens right away — the delay only applies on the way
-			// out (onLeaveBack), not the way in.
+			// Scrolling back down cancels any pending delayed close and reopens right away.
 			if (laptopSpinCloseTimeoutId) {
 				clearTimeout(laptopSpinCloseTimeoutId);
 				laptopSpinCloseTimeoutId = null;
@@ -127,10 +112,7 @@ function initLaptopSpin() {
 			}
 
 			if (laptopSpinRevealFired) {
-				// The reveal had already played — undo it immediately, but
-				// hold the laptop itself open for laptopSpinCloseDelayMs so
-				// the text finishes clearing away before the laptop starts
-				// visibly closing behind it, rather than both moving at once.
+				// Undo the reveal immediately, but hold the laptop open briefly so text clears first.
 				laptopSpinRevealFired = false;
 				window.dispatchEvent(new CustomEvent("laptop:spinreverse"));
 				laptopSpinCloseTimeoutId = setTimeout(() => {
@@ -138,8 +120,7 @@ function initLaptopSpin() {
 					setLaptopSpinTarget(0, laptopSpinDurationMs);
 				}, laptopSpinCloseDelayMs);
 			} else {
-				// Reveal never played (scrolled back up before the spin
-				// finished) — nothing to wait on, close right away.
+				// Reveal never played — nothing to wait on, close right away.
 				setLaptopSpinTarget(0, laptopSpinDurationMs);
 			}
 		}
@@ -193,8 +174,7 @@ function initIntroReveal() {
 		if (h1Timeline) h1Timeline.play();
 	});
 
-	// Runs at 2x speed on the way back so the text clears out promptly
-	// rather than lingering while the laptop starts closing.
+	// Runs at 2x speed on the way back so text clears before the laptop starts closing.
 	window.addEventListener("laptop:spinreverse", () => {
 		growTweens.forEach((tween) => tween.timeScale(2).reverse());
 		if (h1Chars) {
@@ -210,37 +190,61 @@ function initIntroReveal() {
 	});
 }
 
-// ─── Laptop grow (midY -> endY / midScale -> endScale) ──────────────────
-const laptopGrowDurationMs = 1200;
-const laptopGrowRevealLeadMs = 700; // laptop:growreveal fires this long before the grow stage visually concludes — see initPageActiveScrollDepth()
-
-let laptopGrowRevealTimeoutId = null; // pending "fire the reveal" timer
+// ─── Laptop grow (CSS scale tween, not the 3D model) ─────────────────────
+// Plain GSAP scale tween on the canvas container + intro wrapper, timed to match the old WebGL grow stage.
+const laptopGrowDurationSecs = 1.2;
+const laptopGrowEase = "power4.in"; // ~ old easeInQuint (cubic-bezier(0.64, 0, 0.78, 0))
 
 function initLaptopGrow() {
+	const laptop = document.querySelector("#laptop-3d-canvas-inner");
+	const intro = document.querySelector("#intro .sticky-inner");
+
+	const growTweens = [];
+	if (laptop) {
+		growTweens.push(
+			gsap.fromTo(
+				laptop,
+				{ scale: 1 },
+				{ scale: 1.5, duration: laptopGrowDurationSecs, ease: laptopGrowEase, paused: true }
+			)
+		);
+	}
+	if (intro) {
+		growTweens.push(
+			gsap.fromTo(
+				intro,
+				{ scale: .8 },
+				{ scale: 1, duration: 1, ease: laptopGrowEase, paused: true }
+			)
+		);
+	}
+
 	ScrollTrigger.create({
 		start: () => window.innerHeight * 1, // 100vh, recalculated on resize
 		onEnter: () => {
-			setLaptopGrowTarget(1, laptopGrowDurationMs);
-
-			if (laptopGrowRevealTimeoutId) clearTimeout(laptopGrowRevealTimeoutId);
-			laptopGrowRevealTimeoutId = setTimeout(() => {
-				laptopGrowRevealTimeoutId = null;
-				window.dispatchEvent(new CustomEvent("laptop:growreveal"));
-			}, Math.max(laptopGrowDurationMs - laptopGrowRevealLeadMs, 0));
+			// Reveal fires once every tween is actually done, not on a lead-time guess. Reset per onEnter — no stacking.
+			let completedCount = 0;
+			growTweens.forEach((tween) => {
+				tween.eventCallback("onComplete", () => {
+					completedCount += 1;
+					if (completedCount === growTweens.length) {
+						window.dispatchEvent(new CustomEvent("laptop:growreveal"));
+					}
+				});
+				tween.play();
+			});
 		},
 		onLeaveBack: () => {
-			setLaptopGrowTarget(0, laptopGrowDurationMs);
-
-			if (laptopGrowRevealTimeoutId) {
-				clearTimeout(laptopGrowRevealTimeoutId);
-				laptopGrowRevealTimeoutId = null;
-			}
+			growTweens.forEach((tween) => {
+				tween.eventCallback("onComplete", null); // clear, else a stale callback double-fires next onEnter
+				tween.reverse();
+			});
 			window.dispatchEvent(new CustomEvent("laptop:growreverse"));
 		}
 	});
 }
 
-// ─── #page active — flips just before the laptop grow stage concludes ───
+// ─── #page active ─────────────────────────────────────────────────────
 const pageActiveConditions = {};
 function setPageActiveCondition(name, isActive) {
 	pageActiveConditions[name] = isActive;
@@ -251,25 +255,19 @@ function setPageActiveCondition(name, isActive) {
 	const nowActive = Object.values(pageActiveConditions).some(Boolean);
 	page.classList.toggle("active", nowActive);
 
-	// Lets other init*() functions react to #page gaining/losing "active"
-	// without each needing its own polling or MutationObserver.
+	// Lets other init*() functions react without their own polling/MutationObserver.
 	if (nowActive !== wasActive) {
 		page.dispatchEvent(new CustomEvent("page:activechange", { detail: nowActive }));
 	}
 }
-// Driven by initLaptopGrow() above, not by scroll position directly — same
-// pattern as initIntroReveal() listening to initLaptopSpin()'s events:
-//   - laptop:growreveal fires laptopGrowRevealLeadMs before the grow stage
-//     visually concludes.
-//   - laptop:growreverse fires the moment the grow stage reverses.
-function initPageActiveScrollDepth() {
+
+// Listens for initLaptopGrow()'s events. #page gains "active" once the grow animation has actually finished, not before.
+function initPageActive() {
 	window.addEventListener("laptop:growreveal", () => setPageActiveCondition("scrolledPastGrow", true));
 	window.addEventListener("laptop:growreverse", () => setPageActiveCondition("scrolledPastGrow", false));
 }
 
-/**
- * Entry point — call once on DOMContentLoaded.
- */
+// Entry point — call once on DOMContentLoaded.
 export function initScrollControls() {
 	if (typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") {
 		console.warn("Scroll controls: GSAP or ScrollTrigger not loaded");
@@ -281,5 +279,5 @@ export function initScrollControls() {
 	initLaptopSpin();
 	initIntroReveal();
 	initLaptopGrow();
-	initPageActiveScrollDepth();
+	initPageActive();
 }

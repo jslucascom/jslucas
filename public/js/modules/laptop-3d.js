@@ -1,57 +1,37 @@
 /**
- * 3D Laptop Animation Module
- * Only renders when visible and when values are changing
- *
- * Ownership split with scroll-controls.js: this module owns the 3D scene,
- * the visual target values (scale/position/rotation/lid angle) and the
- * per-frame easing/render loop. It has no scroll-reading logic of its own
- * any more — scroll-controls.js's initLaptopSpin()/initLaptopGrow() own
- * every "when"/"how long" setting (trigger depth, duration, reveal timing)
- * and drive this module purely through setLaptopSpinTarget()/
- * setLaptopGrowTarget().
+ * 3D Laptop Animation Module — scene, transform targets, render loop.
+ * Driven by scroll-controls.js's initLaptopSpin() via setLaptopSpinTarget(); no scroll logic of its own.
  */
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // ===== DEVELOPMENT TOGGLE =====
-const ANIMATIONS_ENABLED = true; // 👈 Change to true when you need the 3D laptop
+const ANIMATIONS_ENABLED = true; // set false to disable the 3D laptop
 // ==============================
 
 // ============================================
-// ANIMATION CONTROLS - EASY TO ADJUST
+// ANIMATION CONTROLS
 // ============================================
-// Visual target values only. Every scroll-trigger "when"/"how long" setting
-// (spin duration, grow start depth/duration, reveal lead time) now lives in
-// scroll-controls.js's initLaptopSpin()/initLaptopGrow() and arrives here
-// via setLaptopSpinTarget()/setLaptopGrowTarget()'s durationMs argument.
+// Visual target values only — timing/duration comes from scroll-controls.js via setLaptopSpinTarget().
 const animationControls = {
-	// Scale animation (multiplier of base model size). Two stages, both
-	// time-driven, reversible sequences:
-	// startScale -> midScale plays while spinProgress travels toward
-	// spinTarget (see setLaptopSpinTarget()).
-	// midScale -> endScale plays while growProgress travels toward
-	// growTarget (see setLaptopGrowTarget()).
+	// Scale (multiplier of base model size), tracks spinProgress.
 	startScale: .65,
-	midScale: 5,
-	endScale: 15,
+	endScale: 5, // was midScale before the grow stage was removed — old endScale (15) was the grow stage's target, not spin's
 
-	// X-position animation (horizontal position)
+	// X position (horizontal), tracks spinProgress.
 	startX: -.9,
 	endX: 0,
 
-	// Y-position animation (vertical position). Same two-stage pattern as
-	// scale above: startY -> midY tracks spinProgress, midY -> endY tracks
-	// growProgress.
+	// Y position (vertical), tracks spinProgress.
 	startY: -.4,
-	midY: -5.5,
-	endY: -16,
+	endY: -5.5, // was midY before the grow stage was removed — old endY (-16) was the grow stage's target, not spin's
 
-	// Y-rotation animation (left/right spin)
+	// Y-rotation (left/right spin), tracks spinProgress.
 	startRotationY: Math.PI * -1.24,
 	endRotationY: 0,
 
-	// X-rotation animation (tilt up/down)
+	// X-rotation (tilt), tracks spinProgress.
 	startRotationX: .1,
 	endRotationX: -.35,
 
@@ -60,11 +40,7 @@ const animationControls = {
 	floatingAmount: 0.15,
 	floatingSpeed: 0.0005,
 
-	// Lid hinge (degrees). Drives the "Bevels_2" node directly — this is
-	// the model's screen/lid assembly, and its hinge rotates on a single
-	// local axis, so we set it ourselves each frame instead of playing the
-	// model's baked open-close clip. Tracks spinProgress, same as
-	// rotationX/rotationY above.
+	// Lid hinge (degrees) — drives the "Bevels_2" node directly, tracks spinProgress.
 	startLidAngle: 45,
 	endLidAngle: 90
 };
@@ -73,57 +49,40 @@ const animationControls = {
 // LIGHTING CONTROLS
 // ============================================
 const lightingControls = {
-	// Flat, directionless fill applied to every surface equally. Raising
-	// this brightens the whole model at once — the broadest, blunter lever.
-	// Was 8 — contributing a lot of the "washed out" flatness on the
-	// exterior lid, since ambient hits every surface equally regardless
-	// of angle. Dropped for more contrast/definition everywhere.
+	// Flat ambient fill applied evenly to every surface.
 	ambientIntensity: 5,
 
-	// Key light: the primary directional light, positioned above and in
-	// front. Casts the main shadow.
+	// Key light — primary directional light, casts the main shadow.
 	mainIntensity: 4,
 	mainPosition: { x: 5, y: 10, z: 7 },
 
-	// Light from behind the laptop. Its intensity is animated on scroll
-	// (see dynamicBackLight below) rather than staying fixed.
+	// Back light — intensity animated on scroll, see dynamicBackLight below.
 	backLightEnabled: true,
 	backIntensity: 4,
 	backPosition: { x: 0, y: 5, z: -10 },
 
-	// Soft blue-tinted light from the lower-left-behind, fills in shadows
-	// left by the main light so that side doesn't go fully dark.
+	// Fill light — softens shadows left by the main light.
 	fillIntensity: 4,
 	fillPosition: { x: -5, y: 5, z: -5 },
 
-	// When true, backLight intensity is interpolated between
-	// backLightStartIntensity (spin start) and backLightEndIntensity
-	// (spin end) each frame, instead of staying at backIntensity.
+	// When true, backLight intensity interpolates between start/end each frame.
 	dynamicBackLight: true,
 	backLightStartIntensity: 3,
 	backLightEndIntensity: 2,
 
-	// Catches the exterior lid as it rotates into view — without this the
-	// lid/Apple-logo panel sits in near-total darkness, since none of the
-	// other lights are aimed at the camera-facing side. Was 9 — by far
-	// the brightest light in the whole scene, which is why the exterior
-	// lid read as too light/washed out. Dropped substantially; still
-	// enough to keep the lid/logo visible rather than going flat black.
+	// Lid light — highlights the exterior lid/logo as it rotates into view.
 	lidIntensity: 3,
 	lidPosition: { x: 0, y: 3, z: 10 },
 
-	// Shines down onto the open interior (keyboard/trackpad), which none
-	// of the other lights are really aimed at.
+	// Keyboard light — lights the open interior (keyboard/trackpad).
 	keyboardIntensity: 2,
 	keyboardPosition: { x: 0, y: 10, z: 2 }
 };
 
 // ============================================
-// BASELINE DIMENSIONS FOR SCALING
+// BASELINE DIMENSIONS
 // ============================================
-// 16:9 render target. The canvas is scaled to fill 100vh (see
-// handleResize below); width follows the ratio and is free to run past
-// 100vw — no max-width cap, so it's never squashed horizontally.
+// 16:9 render target, scaled to fill 100vh — see handleResize().
 const baselineWidth = 1600;
 const baselineHeight = 900;
 
@@ -131,7 +90,7 @@ const baselineHeight = 900;
 // MODULE STATE
 // ============================================
 let container = null;
-let initialized = false; // guards the exported setters/render loop on pages with no laptop canvas
+let initialized = false; // guards setters/render loop when there's no laptop canvas on the page
 
 let isVisible = false;
 let animationFrameId = null;
@@ -139,32 +98,19 @@ let isTabVisible = true;
 
 let scene, camera, renderer, isMobile;
 let laptop = null;
-let lidNode = null; // "Bevels_2" — the model's screen/lid assembly, hinge-rotated directly (see updateLaptopTransform)
+let lidNode = null; // "Bevels_2" — the lid/screen assembly, hinge-rotated directly
 let backLight = null;
 let baseScale = 1;
 
-// Spin stage (startScale/Y -> midScale/Y) — time-driven, reversible.
-// spinProgress is a raw 0-1 value that advances toward spinTarget at a
-// constant rate over spinDurationMs (see updateLaptopTransform()). Both are
-// set from outside via setLaptopSpinTarget() — scroll-controls.js's
-// initLaptopSpin() owns when that happens and how long it takes.
+// Spin stage — spinProgress advances toward spinTarget at a constant rate over spinDurationMs.
+// Set via setLaptopSpinTarget(), called by scroll-controls.js's initLaptopSpin().
 let spinProgress = 0;
 let spinTarget = 0;
-let spinDurationMs = 1600; // fallback only — setLaptopSpinTarget() normally supplies this
+let spinDurationMs = 1600; // fallback only
 
-// Grow stage (midScale/Y -> endScale/Y) — same pattern, driven by
-// setLaptopGrowTarget() from scroll-controls.js's initLaptopGrow().
-let growProgress = 0;
-let growTarget = 0;
-let growDurationMs = 2000; // fallback only — setLaptopGrowTarget() normally supplies this
+let lastFrameTime = null; // for computing dt; reset on render-loop restart to avoid a big first-frame jump
 
-let lastFrameTime = null; // for computing dt in the constant-rate progress updates; reset on render-loop (re)start so a long-idle gap doesn't cause one huge jump
-
-// The lid's hinge keyframes (found by scanning the GLB's baked "open/close"
-// clip) rotate purely around local axis (-1, 0, 0) — the quaternion at
-// every sampled keyframe has zero Y/Z component. Reusing that exact axis
-// means setLidAngle() below reproduces the model's own hinge motion
-// exactly, just clamped to whatever start/end angle we choose.
+// Lid hinge rotates purely around local axis (-1, 0, 0), matching the GLB's baked clip.
 const LID_HINGE_AXIS = new THREE.Vector3(-1, 0, 0);
 
 function setLidAngle(degrees) {
@@ -172,24 +118,16 @@ function setLidAngle(degrees) {
 	lidNode.quaternion.setFromAxisAngle(LID_HINGE_AXIS, THREE.MathUtils.degToRad(degrees));
 }
 
-// Easing function — used for both the spin and grow stages. Equivalent to
-// CSS's cubic-bezier(0.64, 0, 0.78, 0) ("easeInQuint") — slow start,
-// accelerating hard into the finish, no ease-out at the end.
+// Equivalent to cubic-bezier(0.64, 0, 0.78, 0) — slow start, hard finish.
 function easeInQuint(t) {
 	return t ** 5;
 }
 
 // ============================================
-// PUBLIC API — driven entirely by scroll-controls.js
+// PUBLIC API
 // ============================================
 
-/**
- * Sets the spin stage's target (1 = open, 0 = closed) and, optionally, the
- * duration (ms) of a full 0->1 traverse at the constant rate used in
- * updateLaptopTransform(). Called by scroll-controls.js's initLaptopSpin()
- * — this module has no opinion on when spin should happen or how long it
- * takes, only how to play it.
- */
+// Sets the spin target (1 = open, 0 = closed) and optional duration (ms). Called by initLaptopSpin().
 export function setLaptopSpinTarget(target, durationMs) {
 	if (!initialized) return;
 	if (typeof durationMs === 'number') spinDurationMs = durationMs;
@@ -197,25 +135,12 @@ export function setLaptopSpinTarget(target, durationMs) {
 	startRenderLoop();
 }
 
-/**
- * Sets the grow stage's target (1 = grown, 0 = ungrown) and duration (ms),
- * same shape as setLaptopSpinTarget(). Called by scroll-controls.js's
- * initLaptopGrow().
- */
-export function setLaptopGrowTarget(target, durationMs) {
-	if (!initialized) return;
-	if (typeof durationMs === 'number') growDurationMs = durationMs;
-	growTarget = target;
-	startRenderLoop();
-}
-
 // ============================================
-// OPTIMIZED RENDER LOOP - ONLY RUNS WHEN NEEDED
+// RENDER LOOP — only runs when needed
 // ============================================
 function shouldRender() {
 	return isVisible && isTabVisible && laptop && (
 		spinProgress !== spinTarget ||
-		growProgress !== growTarget ||
 		animationControls.floatingEnabled
 	);
 }
@@ -237,21 +162,13 @@ function stopRenderLoop() {
 	}
 }
 
-// Applies the current transform for spinProgress and growProgress. Shared
-// by the render loop and the one-off initial render so both use identical
-// math — otherwise the laptop's pre-load pose (set directly in
-// loadLaptopModel) doesn't match where this function would place it,
-// causing a visible snap on the first frame.
+// Applies the current transform for spinProgress. Shared by the render loop and the initial render.
 function updateLaptopTransform() {
 	const now = performance.now();
 	const dt = lastFrameTime === null ? 0 : now - lastFrameTime;
 	lastFrameTime = now;
 
-	// Spin stage: spinProgress advances toward spinTarget at a constant
-	// rate over real time (spinDurationMs per full 0->1 traverse), rather
-	// than being locked to a fixed start time — this is what lets it
-	// reverse cleanly mid-flight if setLaptopSpinTarget(0) arrives before
-	// it finishes.
+	// spinProgress advances toward spinTarget at a constant rate so it can reverse cleanly mid-flight.
 	if (spinProgress !== spinTarget) {
 		const step = dt / spinDurationMs;
 		spinProgress = spinTarget > spinProgress
@@ -259,62 +176,36 @@ function updateLaptopTransform() {
 			: Math.max(spinProgress - step, spinTarget);
 	}
 
-	// Grow stage: same constant-rate, reversible time-driven approach as
-	// the spin stage above, just over growDurationMs instead of
-	// spinDurationMs.
-	if (growProgress !== growTarget) {
-		const growStep = dt / growDurationMs;
-		growProgress = growTarget > growProgress
-			? Math.min(growProgress + growStep, growTarget)
-			: Math.max(growProgress - growStep, growTarget);
-	}
-
-	// Single ease-in-out curve for each stage — eases in on the way open,
-	// eases out on the way closed again, symmetric either direction.
 	const easedProgress = easeInQuint(spinProgress);
-	const growEasedProgress = easeInQuint(growProgress);
 
-	// Animate Y-axis rotation
 	laptop.rotation.y = animationControls.startRotationY -
 		(easedProgress * (animationControls.startRotationY - animationControls.endRotationY));
 
-	// Animate X-axis rotation
 	laptop.rotation.x = animationControls.startRotationX + (easedProgress * animationControls.endRotationX);
 
-	// Animate lid hinge angle (startLidAngle -> endLidAngle), same
-	// progress curve as the Y-rotation above.
+	// Lid hinge angle, same progress curve as rotation above.
 	if (lidNode) {
 		const lidAngle = animationControls.startLidAngle +
 			(easedProgress * (animationControls.endLidAngle - animationControls.startLidAngle));
 		setLidAngle(lidAngle);
 	}
 
-	// Animate scale — stage 1 (startScale -> midScale) tracks spinProgress,
-	// same as rotation/position; stage 2 (midScale -> endScale) is added on
-	// top via growProgress, so the laptop keeps growing well after
-	// rotation/position have settled.
-	const stage1ScaleMultiplier = animationControls.startScale +
-		(easedProgress * (animationControls.midScale - animationControls.startScale));
-	const currentScaleMultiplier = stage1ScaleMultiplier +
-		(growEasedProgress * (animationControls.endScale - animationControls.midScale));
+	// Scale: startScale -> endScale.
+	const currentScaleMultiplier = animationControls.startScale +
+		(easedProgress * (animationControls.endScale - animationControls.startScale));
 	const currentScale = baseScale * currentScaleMultiplier;
 	laptop.scale.setScalar(currentScale);
 
-	// Animate X position (horizontal)
+	// X position (horizontal): startX -> endX.
 	const baseX = animationControls.startX +
 		(easedProgress * (animationControls.endX - animationControls.startX));
 	laptop.position.x = baseX;
 
-	// Animate Y position (vertical) — same two-stage pattern as scale:
-	// stage 1 (startY -> midY) tracks spinProgress, stage 2 (midY -> endY)
-	// continues via growEasedProgress.
-	const stage1Y = animationControls.startY +
-		(easedProgress * (animationControls.midY - animationControls.startY));
-	const baseY = stage1Y +
-		(growEasedProgress * (animationControls.endY - animationControls.midY));
+	// Y position (vertical): startY -> endY.
+	const baseY = animationControls.startY +
+		(easedProgress * (animationControls.endY - animationControls.startY));
 
-	// Add floating animation on top if enabled — fades out as the spin
-	// stage reaches its end, so the laptop settles instead of jumping.
+	// Floating animation on top, fades out as spin nears its end.
 	let floatingOffset = 0;
 	if (animationControls.floatingEnabled) {
 		const floatingFade = 1 - spinProgress;
@@ -330,12 +221,6 @@ function updateLaptopTransform() {
 		backLight.intensity = lightingControls.backLightStartIntensity -
 			(easedProgress * (lightingControls.backLightStartIntensity - lightingControls.backLightEndIntensity));
 	}
-
-	// Broadcast the grow stage's eased progress so other elements — e.g.
-	// section#intro .h1-container in scroll-controls.js — can move in
-	// exact lockstep with the laptop, frame for frame, rather than
-	// approximating it with a separately-timed CSS animation.
-	window.dispatchEvent(new CustomEvent('laptop3d:growprogress', { detail: growEasedProgress }));
 }
 
 // Optimized animation loop - only runs when needed
@@ -364,7 +249,7 @@ export function initLaptop3D() {
 		return;
 	}
 
-	container = document.getElementById('laptop-3d-canvas-container');
+	container = document.getElementById('laptop-3d-canvas-inner');
 
 	// Exit if container doesn't exist (not on this page)
 	if (!container) return;
@@ -407,12 +292,7 @@ export function initLaptop3D() {
 	// Renderer with lower pixel ratio on mobile for better performance
 	isMobile = window.innerWidth < 768;
 	renderer = new THREE.WebGLRenderer({
-		// MSAA is a real per-frame cost on this canvas (rendered up to
-		// 3200x1800 at 2x pixel ratio, 7 lights, ~20 draw calls) and this is
-		// exactly the render loop competing with the #intro SplitText reveal
-		// for frame budget during scroll — worth trading away for smoother
-		// scroll on every device, not just mobile. The CSS upscale (see
-		// handleResize) already softens hard edges somewhat.
+		// MSAA is costly here and competes with scroll for frame budget — traded off for smoother scroll.
 		antialias: false,
 		alpha: true,
 		powerPreference: 'high-performance'
@@ -466,16 +346,10 @@ export function initLaptop3D() {
 	);
 	scene.add(fillLight);
 
-	// Rim light (warm orange edge highlight) removed — one of 7 lights in
-	// this scene, each adding real per-fragment shader cost every frame
-	// during scroll, and its contribution was the most purely decorative
-	// (an edge glow separating the laptop from the background) rather than
-	// structural like the others.
+	// Rim light removed — decorative only, not worth the per-frame cost.
 
-	// Lid light — lights the exterior lid/logo from the camera side so it
-	// picks up a nice highlight as the laptop rotates, instead of sitting
-	// in total darkness.
-	const lidLight = new THREE.DirectionalLight(0xffffff, lightingControls.lidIntensity);
+	// Lid light — highlights the exterior lid/logo as it rotates into view.
+	const lidLight = new THREE.DirectionalLight(0x000000, lightingControls.lidIntensity);
 	lidLight.position.set(
 		lightingControls.lidPosition.x,
 		lightingControls.lidPosition.y,
@@ -483,8 +357,7 @@ export function initLaptop3D() {
 	);
 	scene.add(lidLight);
 
-	// Keyboard light — aimed down at the open interior so the keyboard and
-	// trackpad read as lit rather than relying on the rim light's edge glow.
+	// Keyboard light — lights the open interior (keyboard/trackpad).
 	const keyboardLight = new THREE.DirectionalLight(0xffffff, lightingControls.keyboardIntensity);
 	keyboardLight.position.set(
 		lightingControls.keyboardPosition.x,
@@ -508,8 +381,7 @@ export function initLaptop3D() {
 	scene.add(shadowPlane);
 	console.log('✓ Shadow plane added (disabled)');
 
-	// Model file. The GLB embeds its own PBR textures and materials, so
-	// there's no separate texture-loading pass to wait on — load straight in.
+	// GLB embeds its own textures/materials — no separate loading pass needed.
 	const modelFile = assetsPath.models + '/macbook-lg.glb';
 
 	loadLaptopModel();
@@ -524,12 +396,7 @@ export function initLaptop3D() {
 				console.log('✓ Model loaded successfully!');
 				laptop = gltf.scene;
 
-				// "Bevels_2" is the model's lid/screen assembly — its baked
-				// clip is the open-close hinge, but we drive that angle
-				// ourselves (see setLidAngle/animationControls.startLidAngle)
-				// rather than playing the clip, so the hinge can track spin
-				// progress between whatever start/end angle we choose instead
-				// of the model's own fixed open-then-close-again motion.
+				// "Bevels_2" is the lid/screen hinge node — angle driven manually via setLidAngle(), not the baked clip.
 				lidNode = laptop.getObjectByName('Bevels_2');
 				if (lidNode) {
 					setLidAngle(animationControls.startLidAngle);
@@ -537,23 +404,7 @@ export function initLaptop3D() {
 					console.warn('⚠ Could not find "Bevels_2" lid node on this model — lid angle controls will have no effect.');
 				}
 
-				// Screen material — deliberately UNLIT, same reasoning as the
-				// previous OBJ setup: a real screen displays at its own fixed
-				// brightness rather than reflecting room light, so a lit
-				// material here would catch every lighting tweak as a
-				// specular hotspot.
-				//
-				// The actual display panel is "Material.002" — confirmed by
-				// bounding box (roughly 1.04 x 0.65 units, matching the full
-				// screen face). It ships with a baked-in photo of the model
-				// author's own Sketchfab profile (trains and all) as its
-				// baseColorTexture, which is what was showing through.
-				// "Glass" (previously swapped here) turned out to be an
-				// unrelated tiny sliver — a lens/indicator detail, not the
-				// screen — so it's left alone now. Flat unlit off-white
-				// (matching $off-white / #EDE9DE from the site's own palette)
-				// replaces the baked photo, reproducing the old texture's
-				// "screen glowing on" look without needing an image at all.
+				// Screen ("Material.002") is unlit flat off-white — a real screen shouldn't catch scene lighting.
 				const screenMaterial = new THREE.MeshBasicMaterial({ color: 0xede9de });
 
 				laptop.traverse((child) => {
@@ -562,29 +413,7 @@ export function initLaptop3D() {
 							child.material = screenMaterial;
 						}
 
-						// "Object_4" (material "Black_Glass") sits almost exactly
-						// coincident with the screen mesh above — local Y range
-						// ~0.0092-0.0106 vs the screen's ~0.0102-0.0105, a gap of
-						// roughly 0.0002 units. Once the scroll animation scales
-						// the laptop up to 14x, that's well within z-fighting
-						// range: the two surfaces flicker against each other as
-						// the model rotates (visible as black squares flashing
-						// on the screen). The old lap-top.obj model never had
-						// this coincident glass-overlay mesh, which is why the
-						// glitch only showed up after switching to this GLB.
-						// (Confirmed via a runtime console.log dump of every
-						// mesh's real name/material/bbox as parsed by
-						// GLTFLoader — node numbering here doesn't match a
-						// Node.js-side glTF inspection, which is why this was
-						// "Object_0" in an earlier, incorrect version of this
-						// fix that silently never matched anything.)
-						// polygonOffset nudges it behind the screen in the depth
-						// buffer without moving the actual geometry, so the
-						// glass still renders — reliably behind the display
-						// instead of fighting with it. Cloned first since
-						// "Black_Glass" is reused by another, unrelated mesh
-						// elsewhere on the model (a trim piece, not coincident
-						// with anything) that shouldn't be affected.
+						// "Object_4" z-fights with the screen at scroll-scale — polygonOffset nudges it behind.
 						if (child.name === 'Object_4') {
 							child.material = child.material.clone();
 							child.material.polygonOffset = true;
@@ -624,18 +453,11 @@ export function initLaptop3D() {
 				const loadingDiv = document.getElementById('laptop-3d-loading');
 				if (loadingDiv) loadingDiv.style.display = 'none';
 
-				// Render once immediately so the laptop is visible on load —
-				// shouldRender() won't fire on its own until spin/grow are
-				// triggered or the tab/visibility state changes, now that
-				// floating is off. Run it through the same transform as the
-				// render loop so the pose matches exactly (no snap on the
-				// first triggered frame).
+				// Render once immediately so the laptop is visible before spin triggers.
 				updateLaptopTransform();
 				renderer.render(scene, camera);
 
-				// Start render loop now that model is loaded (a no-op unless
-				// setLaptopSpinTarget()/setLaptopGrowTarget() have already
-				// been called with a target that differs from progress)
+				// No-op unless setLaptopSpinTarget() has already set a different target.
 				startRenderLoop();
 			},
 			(xhr) => {
@@ -695,11 +517,7 @@ export function initLaptop3D() {
 		const currentWidth = window.innerWidth;
 		const currentHeight = window.innerHeight;
 
-		// Scale to fill viewport height. Width follows the fixed 16:9 ratio
-		// automatically — no separate width cap — so it's never stretched or
-		// squashed off-ratio. If the resulting width exceeds the viewport,
-		// it simply overflows past the left/right edges (hidden by the
-		// browser, not cropped by the canvas itself).
+		// Scale to fill viewport height — width follows the fixed 16:9 ratio, can overflow left/right.
 		const scale = currentHeight / baselineHeight;
 		const scaledWidth = baselineWidth * scale;
 
@@ -708,12 +526,6 @@ export function initLaptop3D() {
 
 		renderer.domElement.style.transform = `translateX(${offsetX}px) scale(${scale})`;
 		renderer.domElement.style.transformOrigin = 'top left';
-
-		// Keep canvas rendering at baseline size (not window size)
-		// Don't call renderer.setSize() on every resize!
-
-		// Camera aspect stays fixed at 16:9 — matches the baseline render
-		// target, which never changes shape.
 
 		console.log('📐 Window:', currentWidth + 'px', '| Canvas scale:', scale.toFixed(3));
 
@@ -725,7 +537,6 @@ export function initLaptop3D() {
 
 	window.addEventListener('resize', handleResize);
 
-	// Call immediately so the canvas starts at baseline resolution (1600×900)
-	// with CSS scaling — not at full Retina window size which costs 4× the GPU work
+	// Render at fixed baseline resolution, scaled via CSS — avoids full Retina GPU cost.
 	handleResize();
 }

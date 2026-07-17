@@ -110,16 +110,20 @@ section {
 			height: 100vh;
 			transform: scale(.8);
 			transform-origin: center center;
-			padding-top: vw(120);
 			transition: all 1.8s;
 
 			.burst {
 				transform: scale(0);
 				position: absolute;
-				left: 10vw;
-				top: 16vh;
-				width: vw(280);
+				left: 12vw;
+				top: 30vh;
+				width: vw(240);
 				z-index: -1;
+			}
+
+			#usp {
+				opacity: 0;
+				transition: opacity .6s ease .1s;
 			}
 		}
 
