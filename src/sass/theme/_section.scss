@@ -92,6 +92,7 @@ section {
 		}
 
 		.spinning-text-container {
+			display:none;
 			position: absolute;
 			top: vw(160);
 			transform: scale(1.4);
@@ -101,7 +102,7 @@ section {
 			font-size: 8px;
 			font-weight: 400;
 			font-style: italic;
-			background-image: url('../images/jsl-memoji-heart.png');
+			background-image: url('/jslucas/images/jsl-memoji-heart.png');
 			background-size: 60%;
 			background-position: center;
 			background-repeat: no-repeat;

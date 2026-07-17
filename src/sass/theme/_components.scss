@@ -90,7 +90,7 @@
 
 		&:hover {
 			transform: translateY(-2px) scale(1.1);
-			background-image: url('../images/cta-primary.png');
+			background-image: url('/jslucas/images/cta-primary.png');
 			background-size: cover;
 			box-shadow:
 				4px 8px 20px rgba(212, 131, 92, 0.2),
@@ -139,7 +139,7 @@
 		transition: all .1s;
 
 		&.btn-metal-contact {
-			background-image: url('../images/jslucas-icon__contact--chrome.png');
+			background-image: url('/jslucas/images/jslucas-icon__contact--chrome.png');
 			background-color: transparent;
 			color: $off-white;
 		}
