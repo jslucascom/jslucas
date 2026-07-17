@@ -1,0 +1,46 @@
+// 3D LAPTOP ANIMATION
+#laptop-3d-canvas-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 480vh;
+	z-index: 220;
+	pointer-events: none;
+
+	canvas {
+		position: sticky;
+		top: 0;
+		display: block;
+		z-index: 800;
+	}
+}
+
+#laptop-3d-loading {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	color: white;
+	font-size: 18px;
+	z-index: 100;
+	background: rgba(0, 0, 0, 0.8);
+	padding: 20px 40px;
+	border-radius: 10px;
+}
+
+#laptop-3d-error-message {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	color: #ff4444;
+	font-size: 16px;
+	z-index: 100;
+	background: rgba(0, 0, 0, 0.9);
+	padding: 30px;
+	border-radius: 10px;
+	max-width: 80%;
+	display: none;
+	text-align: center;
+}

@@ -1,0 +1,26 @@
+---
+// Mirrors global-templates/content-laptop-3d.php + inc/threejs-setup.php
+//
+// The theme's laptop-3d.js module reads asset paths from data attributes on
+// #laptop-3d-canvas-container (set here), then is bootstrapped via an inline
+// module script (mirrors jslucas_laptop_3d_module() in threejs-setup.php).
+---
+
+<div id="laptop-3d-loading">Loading 3D Model...</div>
+<div id="laptop-3d-error-message"></div>
+<div
+	id="laptop-3d-canvas-container"
+	data-models-path="/jslucas/assets/3d-laptop-smaller"
+>
+</div>
+
+<!-- Mirrors jslucas_laptop_3d_module() in inc/threejs-setup.php -->
+<script type="module" is:inline>
+	import { initLaptop3D } from "/jslucas/js/modules/laptop-3d.js";
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", initLaptop3D);
+	} else {
+		initLaptop3D();
+	}
+</script>

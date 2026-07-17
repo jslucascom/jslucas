@@ -1,0 +1,10 @@
+<!-- JS: intro heading text -->
+<script type="module" is:inline>
+	import { initIntroHeading } from "/jslucas/js/modules/intro-heading.js";
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", initIntroHeading);
+	} else {
+		initIntroHeading();
+	}
+</script>

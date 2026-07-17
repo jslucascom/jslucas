@@ -1,0 +1,43 @@
+// Use this file to overwrite the basic Bootstrap variables and add your own variables
+// To overwrite a Bootstrap variable you don´t have to touch the Bootstrap folder.
+// Just copy a variable from src/sass/assets/bootstrap5/_variables.scss, paste it here and edit the value.
+
+$accent-pink: 		#DE5487;
+$accent-blue:		#0BADBF;
+$accent-orange: 	#F2911B;
+$accent-green: 		#B9BF04;
+
+$black: 			#000000;
+$off-black: 		#140F0F;
+$off-black-1:		#111111;
+$off-black-2:		#222222;
+$off-black-3: 		#333333;
+$dark-grey: 		#555555;
+$grey:				#BBBDB7;
+$off-white:			#EDE9DE;
+
+$off-white-trans:	rgba(237, 233, 222, 0.3);
+
+$primary: $off-black-3; // Once we've changed the value, we'll also make it the primary brand color.
+
+// Grid gutter width
+$grid-gutter-width: 4vw;
+
+// Container padding (this affects the horizontal margins)
+$container-padding-x: 12vw;
+
+// Or if you want to control spacing more granularly:
+$spacer: 1rem; // Base spacer unit
+$spacers: (
+	0: 0,
+	1: $spacer * .25,
+	2: $spacer * .5,
+	3: $spacer,
+	4: $spacer * 1.5,
+	5: $spacer * 3,
+	6: 64px // Add custom spacer if needed
+);
+
+$container-max-widths: (
+	sm: 1320px
+);

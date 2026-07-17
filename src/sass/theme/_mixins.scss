@@ -1,0 +1,14 @@
+// MIXINS & FUNCTIONS
+@use "sass:math";
+
+@function vw($value) {
+	@return calc($value / 1512 * 100vw);
+}
+
+@function vh($value) {
+	@return calc($value / 860 * 100vh);
+}
+
+@mixin clamp-text($min-px, $preferred-px, $max-px) {
+	font-size: clamp(#{math.div($min-px, 16)}rem, #{vw($preferred-px)}, #{math.div($max-px, 16)}rem) !important;
+}

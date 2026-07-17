@@ -1,0 +1,81 @@
+// Text Split Effects
+[text-split] {
+	opacity: 0; // Prevent FOUC (flash of unstyled content)
+
+	.word,
+	.char {
+		display: inline-flex !important;
+	}
+
+	.word {
+		overflow: hidden;
+		padding: 1rem .5em;
+		margin: -.5rem -.5em;
+		white-space: nowrap;
+	}
+
+	.char {
+		padding: 1rem .5em;
+		margin: -1rem -.5em;
+	}
+}
+
+// Word animations
+[words-slide-up],
+[words-rotate-in],
+[words-slide-from-right] {
+	.word {
+		overflow: hidden;
+		vertical-align: top;
+	}
+}
+
+[words-rotate-in] {
+	.word {
+		perspective: 1000px;
+		transform-style: preserve-3d;
+	}
+}
+
+// Letter animations
+h1[letters-slide-up],
+h1[letters-slide-down] {
+
+	.word {
+		padding: 1rem 1em;
+		margin: -1rem -.9em;
+	}
+
+	.char {
+		padding-right: .15em;
+		padding-bottom: .15em;
+		margin-right: -.15em;
+		margin-bottom: -.15em;
+	}
+}
+
+/* Text load effect */
+[text-split] {
+	line-height: 1;
+	overflow: hidden;
+}
+
+.paragraph .word {
+	line-height: 1.3;
+	max-height: 3.8vw;
+}
+
+.word {
+	overflow: hidden;
+	padding-bottom: 0.1em;
+	margin-bottom: -0.1em;
+	transform-origin: bottom;
+	animation-delay: 250ms;
+	display: inline-block;
+	white-space: nowrap;
+}
+
+.char {
+	animation-delay: 500ms;
+	display: inline-block;
+}

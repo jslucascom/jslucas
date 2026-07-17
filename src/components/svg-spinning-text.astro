@@ -1,0 +1,38 @@
+<!-- SVG: spinning circular text -->
+<svg class="spin-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+	<path
+		id="circlePath"
+		fill="none"
+		stroke-width="0"
+		stroke="none"
+		d="
+		M 15, 50
+		a 35,35 0 1,1 70,0
+		35,35 0 1,1 -70,0
+	"
+		style="--show: 1;"></path>
+
+	<!-- First text block -->
+	<text class="spin-text" fill="var(--text-1)">
+		<textPath href="#circlePath" textLength="90" lengthAdjust="spacing"
+			>Tap here to Get in Touch</textPath>
+	</text>
+	<!-- First bullet -->
+	<text class="spin-text" fill="var(--text-1)">
+		<textPath href="#circlePath" startOffset="45%">•</textPath>
+	</text>
+
+	<!-- Second text block -->
+	<text class="spin-text" fill="var(--text-1)">
+		<textPath
+			href="#circlePath"
+			startOffset="50%"
+			textLength="90"
+			lengthAdjust="spacing">Spoiler alert: that's me!</textPath
+		>
+	</text>
+	<!-- Second bullet -->
+	<text class="spin-text" fill="var(--text-1)">
+		<textPath href="#circlePath" startOffset="95%">•</textPath>
+	</text>
+</svg>

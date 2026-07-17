@@ -1,0 +1,30 @@
+---
+import Layout from "../layouts/layout.astro";
+// import Navbar from "../components/Navbar.astro";
+import JsLaptop3D from "../components/js-laptop-3d.astro";
+import SvgGradientBg from "../components/svg-gradient-bg.astro";
+// import Cursor from "../components/Cursor.astro";
+import SectionHero from "../components/section-hero.astro";
+import SvgLogo from "../components/svg-logo.astro";
+import SectionIntro from "../components/section-intro.astro";
+// import SectionAbout from "../components/section-about.astro";
+// import SectionValues from "../components/section-values.astro";
+// import SectionPortfolio from "../components/section-portfolio.astro";
+// import SectionContact from "../components/section-contact.astro";
+---
+
+<Layout>
+	<!-- <Navbar customClass="position-fixed light" /> -->
+	<JsLaptop3D />
+	<SvgGradientBg />
+	<SectionHero />
+
+	<main class="back-section" id="main">
+		<SvgLogo />
+		<SectionIntro />
+		<!-- <SectionAbout /> -->
+		<!-- <SectionValues /> -->
+		<!-- <SectionPortfolio /> -->
+		<!-- <SectionContact /> -->
+	</main>
+</Layout>

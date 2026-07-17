@@ -1,0 +1,58 @@
+---
+// Astro: <Navbar customClass="position-fixed light" />
+export interface Props {
+  customClass?: string;
+}
+const { customClass = '' } = Astro.props;
+---
+
+<header class={customClass}>
+  <div class="svg-container">
+    <svg width="92" height="3000" viewBox="0 0 92 3000" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g clip-path="url(#bulgeClip)">
+        <mask id="bulge" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="-720" width="92" height="3720">
+          <g id="bulgeGroup">
+            <path d="M92 1050C92 1093.01 60 1102.7 60 1140C60 1177.3 92 1187.14 92 1230V3000H0V-720H92C92 -720 92 1006.99 92 1050Z" fill="#111111" />
+          </g>
+        </mask>
+        <g mask="url(#bulge)">
+          <path d="M92 3000H0V0H92V1050C91.9999 1101.43 72 1108.95 72 1140C72 1171.05 92 1194 92 1230C92 1266 72 1288.95 72 1320C72 1351.05 92 1374 92 1410C92 1446 72 1468.95 72 1500C72 1531.05 92 1554 92 1590C92 1626 72 1648.95 72 1680C72 1711.05 92 1734 92 1770C92 1806 72 1828.95 72 1860C72 1891.05 91.9999 1898.57 92 1950V3000Z" fill="#111111" />
+        </g>
+      </g>
+      <defs>
+        <clipPath id="bulgeClip">
+          <rect width="92" height="3000" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+  </div>
+
+  <nav class="navbar intro">
+    <div class="position-marker"></div>
+    <a href="#intro" class="nav-link active" data-top="20" data-target="intro">
+      <span class="idle-circle"></span>Intro
+    </a>
+    <a href="#about" class="nav-link" data-top="34.3" data-target="about">
+      <span class="idle-circle"></span>About
+    </a>
+    <a href="#values" class="nav-link" data-top="48.6" data-target="values">
+      <span class="idle-circle"></span>Values
+    </a>
+    <a href="#portfolio" class="nav-link" data-top="62.9" data-target="portfolio">
+      <span class="idle-circle"></span>Portfolio
+    </a>
+    <a href="#contact" class="nav-link" data-top="77.2" data-target="contact">
+      <span class="idle-circle"></span>Contact
+    </a>
+  </nav>
+
+  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" class="goo">
+    <defs>
+      <filter id="goo">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+        <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+        <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+      </filter>
+    </defs>
+  </svg>
+</header>

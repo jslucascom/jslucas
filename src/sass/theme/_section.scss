@@ -1,0 +1,228 @@
+/* SECTION */
+section {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	font-size: 2rem;
+	min-height: 100vh;
+	position: relative;
+
+	article {
+		position: relative;
+		width: 100vw;
+		min-height: 200vh;
+
+		.section-inner {
+			position: sticky;
+			top: 0;
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			padding-top: vw(0);
+			padding-bottom: vw(0);
+		}
+	}
+
+	&#hero {
+		width: 100vw;
+		justify-content: flex-start;
+		position: absolute;
+		min-height: 400vh;
+
+		#intro-heading-canvas-container {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 50%;
+			width: 80vw;
+			transform: translateX(-50%);
+			pointer-events: none;
+
+			canvas {
+				display: block;
+				width: 100%;
+				height: 100%;
+			}
+		}
+
+		#hero-overlay {
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			z-index: 10;
+			color: $off-black-1;
+			position: sticky;
+			top: 0;
+			left: 0;
+			min-height: 100vh;
+
+			.laptop-shadow {
+				transform: scale(.6);
+				opacity: .5;
+				animation: shadow-pulse 12s ease infinite;
+			}
+		}
+	}
+
+	&#intro {
+		justify-content: start;
+		height: 350vh;
+
+		.h1-container {
+			position: fixed;
+			top: 0;
+			height: 100vh;
+			transform: scale(.8);
+			transform-origin: center center;
+			padding-top: vw(96);
+
+			.burst {
+				transform: scale(0);
+				position: absolute;
+				left: 10vw;
+				top: 24vh;
+				width: vw(220);
+				z-index: -1;
+			}
+		}
+
+		.spinning-text-container {
+			position: absolute;
+			top: vw(40);
+			right: vw(60);
+			width: vw(440);
+			height: vw(440);
+			font-size: 8px;
+			font-weight: 400;
+			font-style: italic;
+			background-image: url('../images/jsl-memoji-heart.png');
+			background-size: 60%;
+			background-position: center;
+			background-repeat: no-repeat;
+			transform: scale(0);
+			border-radius: 50%;
+			overflow: hidden;
+			backdrop-filter: url(#circle-filter) saturate(1) brightness(1.06);
+			-webkit-backdrop-filter: url(#circle-filter) saturate(1) brightness(1.06);
+
+			.spin-svg {
+				display: block;
+				width: 100%;
+				height: 100%;
+			}
+
+			.spin-text {
+				transform-origin: center center;
+				animation: spin 20s linear infinite;
+				fill: $off-black !important;
+				font-weight: 800;
+
+				#textPath {
+					display: flex;
+
+					span {
+						display: inline-flex;
+					}
+				}
+			}
+		}
+	}
+
+	&#about {
+		min-height: 200vh;
+	}
+
+	// &#values {
+	// 	/* Let GSAP control the height via pinning — no fixed height needed */
+	// 	min-height: 400vh;
+	// 	justify-content: flex-start;
+
+	// 	article {
+	// 		min-height: unset;
+	// 		/* override the default 200vh — GSAP creates the scroll space */
+	// 	}
+
+	// 	.d-grid {
+	// 		width: 100vw;
+	// 		height: 100vh;
+	// 		padding: 15vh 10vw 10vh;
+	// 		display: grid;
+	// 		grid-template-columns: repeat(3, 1fr);
+	// 		grid-template-rows: auto 1fr;
+	// 		gap: vw(0) vw(40);
+	// 	}
+
+	// 	.top {
+	// 		grid-column: 1 / -1;
+	// 	}
+
+	// 	.card-wrapper {
+	// 		position: relative;
+	// 		display: flex;
+	// 		justify-content: center;
+
+	// 		svg {
+	// 			max-width: vw(300);
+	// 		}
+
+	// 		img {
+	// 			max-width: vw(300);
+	// 			position: absolute;
+	// 			top: 50%;
+	// 			left: 50%;
+	// 			transform: translateX(-50%) translateY(-50%);
+	// 		}
+	// 	}
+
+	// 	.values-title {
+	// 		position: sticky;
+	// 		top: vw(60);
+	// 		left: vw(120);
+	// 		// opacity: 0.15; 
+	// 		pointer-events: none;
+	// 		z-index: 0;
+	// 	}
+	// 	/* ─── Values Section ──────────────────────────────────────────────────────── */
+
+	// 	/* The sticky container GSAP will pin — needs to fill the viewport */
+	// 	.values-sticky {
+	// 		position: relative;
+	// 		width: 100%;
+	// 		height: 100vh;
+	// 		display: flex;
+	// 		flex-direction: column;
+	// 		align-items: center;
+	// 		justify-content: center;
+	// 		overflow: hidden; /* keeps off-screen cards invisible */
+	// 	}
+
+	// 	/* Three cards side by side, left-aligned */
+	// 	.values-cards {
+	// 		display: flex;
+	// 		gap: vw(32);
+	// 		align-items: center;
+	// 		justify-content: space-evenly;
+	// 		width: 100%;
+	// 		height: 100vh;
+	// 		padding: 0 vw(120);
+	// 	}
+
+	// 	/* Each card wrapper — GSAP translates this */
+	// 	.value-card-wrap {
+	// 		flex: 0 0 auto;
+
+	// 		/* Initial off-screen state set by GSAP - no CSS transform to avoid conflicts */
+	// 		opacity: 0;
+	// 	}
+
+	// 	/* The card image itself */
+	// 	.value-card {
+	// 		display: block;
+	// 		width: vw(360);
+	// 		max-width: 420px;
+	// 		height: auto;
+	// 	}
+	// }
+}

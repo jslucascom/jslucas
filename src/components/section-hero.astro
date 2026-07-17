@@ -1,0 +1,15 @@
+---
+import JSIntroHeading from "./js-intro-heading.astro";
+
+export interface Props {
+	customClass?: string;
+}
+const { customClass = "" } = Astro.props;
+---
+
+<section class={`section section-hero ${customClass}`} id="hero">
+	<article id="hero-overlay">
+		<div id="intro-heading-canvas-container"></div>
+		<JSIntroHeading />
+	</article>
+</section>

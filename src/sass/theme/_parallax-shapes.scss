@@ -1,0 +1,143 @@
+// PARALLAX SHAPES WITH RISING EFFECT
+.deco {
+	width: 100vw;
+	height: 100vh;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: -1;
+	pointer-events: none;
+	opacity: .6;
+	mix-blend-mode: difference; // Moved here to work with filter on child
+
+	.deco__item {
+		scale: (3.5);
+		width: auto;
+		will-change: transform;
+		position: fixed; // Fixed to viewport, not container
+		mix-blend-mode: difference; // Moved here to work with filter on child
+
+		.img {
+			background-size: contain;
+			background-repeat: no-repeat;
+			max-width: 18vw;
+			opacity: .6;
+			// Initial state set by JavaScript based on position
+		}
+
+		// Shape 1 - Left side, slow rise
+		&:nth-child(1) {
+			left: -25vw;
+			width: 20vw;
+			transform-origin: left;
+			animation: rise-parallax 60s linear infinite; // Slower = larger number
+		}
+
+		// Shape 2 - Right side, medium-fast rise
+		&:nth-child(2) {
+			right: -25vw;
+			width: 20vw;
+			transform-origin: right;
+			animation: rise-parallax 60s linear infinite; // Medium-fast
+			animation-delay: -15s;
+		}
+
+		// Shape 3 - Left-center, fast rise
+		&:nth-child(3) {
+			left: -25vw;
+			width: 20vw;
+			transform-origin: left;
+			animation: rise-parallax 60s linear infinite; // Faster = smaller number
+			animation-delay: -30s;
+		}
+
+		// Shape 4 - Right-center, very slow rise
+		&:nth-child(4) {
+			right: -25vw;
+			width: 20vw;
+			transform-origin: right;
+			animation: rise-parallax 60s linear infinite; // Very slow = large number
+			animation-delay: -45s;
+		}
+
+		// Shape 5 - Left-center, fast rise
+		// &:nth-child(5) {
+		// 	right: 35vw;
+		// 	width: 10vw;
+		// 	transform-origin: right;
+		// 	animation: rise-parallax 50s linear infinite; // Very slow = large number
+		// 	animation-delay: -20s;
+		// }
+
+		// // Shape 6 - Left-center, fast rise
+		// &:nth-child(6) {
+		// 	left: 25vw;
+		// 	width: 10vw;
+		// 	transform-origin: right;
+		// 	animation: rise-parallax 50s linear infinite; // Very slow = large number
+		// 	animation-delay: -40s;
+		// }
+
+		// // Shape 7 - Left-center, fast rise
+		// &:nth-child(7) {
+		// 	right: 40vw;
+		// 	width: 5vw;
+		// 	transform-origin: right;
+		// 	animation: rise-parallax 40s linear infinite; // Very slow = large number
+		// 	animation-delay: -10s;
+		// }
+	}
+}
+
+// Rising animation keyframes - CSS controls everything (scale, blur, position)
+// Total journey: 300vh (from 200vh to -100vh)
+@keyframes rise-parallax {
+	0% {
+		// Start: 200vh below viewport
+		top: 200vh;
+		// scale: (2.4);
+		filter: blur(3px);
+	}
+
+	16.67% {
+		// 50vh below viewport
+		top: 150vh;
+		// scale: (2.4);
+		filter: blur(2px);
+	}
+
+	33.33% {
+		// Bottom of viewport
+		top: 100vh;
+		// scale: (2);
+		filter: blur(1px);
+	}
+
+	50% {
+		// Middle of viewport
+		top: 50vh;
+		// scale: (1.6);
+		filter: blur(0px);
+	}
+
+	66.67% {
+		// Top of viewport
+		top: 0vh;
+		// scale: (1.2);
+		filter: blur(0px);
+	}
+
+	83.33% {
+		// 50vh above viewport
+		top: -50vh;
+		// scale: (.8);
+		filter: blur(0px);
+	}
+
+	100% {
+		// End: 100vh above viewport
+		top: -100vh;
+		// scale: (.4);
+		filter: blur(0px);
+	}
+}

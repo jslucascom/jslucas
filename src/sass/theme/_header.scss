@@ -1,0 +1,133 @@
+/* HEADER */
+header {
+	height: 100vh;
+	z-index: 1002;
+	// filter: url(#goo);
+	display: flex;
+	flex-direction: row;
+	gap: 0;
+	transform-origin: right;
+	transform: scale(.8);
+	left: -72px;
+
+	.svg-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		transform: scale(.69);
+		filter: url(#goo);
+	}
+
+	.svg-container svg {
+		width: auto;
+	}
+
+	.navbar {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		height: 100vh;
+		padding: 20vh 0;
+		gap: 0px;
+
+		.position-marker {
+			display: block;
+			width: 2.8vh;
+			height: 2.8vh;
+			border-radius: 20px;
+			background: #F2911B;
+			transform-origin: center;
+			transform-box: fill-box;
+			z-index: 200;
+			position: absolute;
+			left: 0;
+			// transition: top;
+			transition: top 0.8s cubic-bezier(0.5, 0, 0.75, 0);
+			filter: url(#goo);
+		}
+
+		.nav-link {
+			color: $off-white;
+			opacity: .8;
+			display: flex;
+			flex-direction: row;
+			border: none;
+			padding: 0;
+			font-size: vw(12);
+			cursor: pointer;
+			text-decoration: none;
+			transition: color 0.3s ease;
+			text-align: left;
+			font-weight: 500;
+			gap: 8px;
+			text-indent: vw(-100);
+			overflow: hidden;
+			width: vw(80);
+
+			&:hover {
+				text-indent: vw(0);
+				opacity: .9;
+			}
+
+			&.active {
+				text-indent: vw(0);
+				opacity: 1;
+				font-weight: 800;
+			}
+
+			.idle-circle {
+				display: inline-block;
+				width: 2.4vh;
+				height: 2.4vh;
+				background-color: $off-white;
+				border-radius: 12px;
+				filter: url(#goo);
+				filter: blur(30) contrast(90)
+			}
+		}
+	}
+
+	&.dark {
+
+		.nav-link {
+			color: $off-black-3;
+
+			.idle-circle {
+				background-color: $off-black-1;
+			}
+		}
+	}
+
+	.goo {
+		position: absolute;
+		transform: scale(0);
+	}
+}
+
+a.brand-mark {
+	position: absolute;
+	transform: translateX(-50%);
+	left: 50%;
+	top: vw(32);
+
+	.brand-logo {
+		max-width: 192px;
+		max-height: 56px;
+		border-radius: 50%;
+		backdrop-filter: url(#ellipse-filter) saturate(1);
+		-webkit-backdrop-filter: url(#ellipse-filter) saturate(1);
+
+		.filter {
+			width: 100%;
+			height: 100%;
+			pointer-events: none;
+			position: absolute;
+			inset: 0;
+		}
+	}
+
+	&.light {
+		position: fixed;
+	}
+}

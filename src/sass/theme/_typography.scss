@@ -1,0 +1,331 @@
+/* FONTS */
+
+/* Editorial New  */
+@font-face {
+	font-family: 'Editorial New';
+	src: url('../fonts/PPEditorialNewUltralight.woff2') format('woff2'),
+		url('../fonts/PPEditorialNewUltralight.woff') format('woff');
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Editorial New';
+	src: url('../fonts/PPEditorialNewUltralightItalic.woff2') format('woff2'),
+		url('../fonts/PPEditorialNewUltralightItalic.woff') format('woff');
+	font-weight: 300;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+
+/* Melancoline */
+@font-face {
+	font-family: 'Melancoline';
+	src: url('../fonts/Melancoline.woff2') format('woff2'),
+		url('../fonts/Melancoline.woff') format('woff');
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* Orsay */
+@font-face {
+	font-family: 'Orsay';
+	src: url('../fonts/Orsay.woff2') format('woff2'),
+		url('../fonts/Orsay.woff') format('woff');
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* RL Madena */
+@font-face {
+	font-family: 'RL Madena';
+	src: url('../fonts/RL-Madena.woff2') format('woff2'),
+		url('../fonts/RL-Madena.woff') format('woff');
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'RL Madena';
+	src: url('../fonts/RL-Madena-Oblique.woff2') format('woff2'),
+		url('../fonts/RL-Madena-Oblique.woff') format('woff');
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: oblique;
+	font-display: swap;
+}
+
+/* ZT Nature */
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-Thin.woff2') format('woff2'),
+		url('../fonts/ZTNature-Thin.otf') format('opentype');
+	font-weight: 100;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-ThinItalic.woff2') format('woff2'),
+		url('../fonts/ZTNature-ThinItalic.otf') format('opentype');
+	font-weight: 100;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-ExtraLight.woff2') format('woff2'),
+		url('../fonts/ZTNature-ExtraLight.otf') format('opentype');
+	font-weight: 200;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-ExtraLightItalic.woff2') format('woff2'),
+		url('../fonts/ZTNature-ExtraLightItalic.otf') format('opentype');
+	font-weight: 200;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-Light.woff2') format('woff2'),
+		url('../fonts/ZTNature-Light.otf') format('opentype');
+	font-weight: 300;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-LightItalic.woff2') format('woff2'),
+		url('../fonts/ZTNature-LightItalic.otf') format('opentype');
+	font-weight: 300;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-Regular.woff2') format('woff2'),
+		url('../fonts/ZTNature-Regular.otf') format('opentype');
+	font-weight: 400;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-Italic.woff2') format('woff2'),
+		url('../fonts/ZTNature-Italic.otf') format('opentype');
+	font-weight: 400;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-Medium.woff2') format('woff2'),
+		url('../fonts/ZTNature-Medium.otf') format('opentype');
+	font-weight: 500;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-MediumItalic.woff2') format('woff2'),
+		url('../fonts/ZTNature-MediumItalic.otf') format('opentype');
+	font-weight: 500;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-SemiBold.woff2') format('woff2'),
+		url('../fonts/ZTNature-SemiBold.otf') format('opentype');
+	font-weight: 600;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-SemiBoldItalic.woff2') format('woff2'),
+		url('../fonts/ZTNature-SemiBoldItalic.otf') format('opentype');
+	font-weight: 600;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-Bold.woff2') format('woff2'),
+		url('../fonts/ZTNature-Bold.otf') format('opentype');
+	font-weight: 700;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-BoldItalic.woff2') format('woff2'),
+		url('../fonts/ZTNature-BoldItalic.otf') format('opentype');
+	font-weight: 700;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-ExtraBold.woff2') format('woff2'),
+		url('../fonts/ZTNature-ExtraBold.otf') format('opentype');
+	font-weight: 800;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-ExtraBoldItalic.woff2') format('woff2'),
+		url('../fonts/ZTNature-ExtraBoldItalic.otf') format('opentype');
+	font-weight: 800;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-Black.woff2') format('woff2'),
+		url('../fonts/ZTNature-Black.otf') format('opentype');
+	font-weight: 900;
+	font-stretch: normal;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'ZT Nature';
+	src: url('../fonts/ZTNature-BlackItalic.woff2') format('woff2'),
+		url('../fonts/ZTNature-BlackItalic.otf') format('opentype');
+	font-weight: 900;
+	font-stretch: normal;
+	font-style: italic;
+	font-display: swap;
+}
+
+/* TYPOGRAPHY */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: 'ZT Nature', serif;
+}
+
+h1,
+.h1 {
+	// @include clamp-text(72, 80, 88);
+	font-size: vw(140) !important;
+	line-height: 1.15 !important;
+	letter-spacing: vw(-1);
+
+	span {
+		font-family: 'RL Madena', serif;
+	}
+}
+
+h2,
+.h2 {
+	@include clamp-text(48, 56, 64);
+	font-optical-sizing: auto;
+	line-height: 1.4 !important;
+	font-weight: 250;
+
+	span.sans {
+	@include clamp-text(40, 48, 56);
+		font-family: 'ZT Nature', serif;
+		display: block;
+		letter-spacing: -1.5px;
+	}
+
+	span.serif {
+		font-family: 'RL Madena', serif;
+		display: block;
+		letter-spacing: -1px;
+	}
+}
+
+h3,
+.h3 {
+	// @include clamp-text(72, 80, 88);
+	font-size: vw(21) !important;
+	line-height: 1 !important;
+	letter-spacing: vw(-.5);
+	font-weight:600;
+}
+
+p, .p {
+	@include clamp-text(16, 18, 40);
+	line-height: .64 !important;
+
+	&.bigger {
+		@include clamp-text(20, 24, 48);
+	}
+
+	&.serif {
+		font-family: 'RL Madena', serif;
+	}
+}
+
+.p-sm {
+	@include clamp-text(10, 14, 18);
+}
+
+.p-md {
+	@include clamp-text(12, 16, 20);
+}
+
+.p-lg {
+	@include clamp-text(16, 20, 24);
+}
+
+.p-xl {
+	@include clamp-text(24, 28, 32);
+}
+
+i,
+em {
+	font-family: 'RL Madena', serif;
+	display: inline-flex !important;
+}
+
+b,
+strong {
+	font-weight: 600;
+}
+
+a.skip-link:active,
+a.skip-link:focus {
+    position: absolute !important;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    height: 32px;
+    z-index: 400;
+    clip: auto;
+    white-space: normal;
+}
