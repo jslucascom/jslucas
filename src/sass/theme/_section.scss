@@ -115,8 +115,8 @@ section {
 			.burst {
 				transform: scale(0);
 				position: absolute;
-				left: 12vw;
-				top: 30vh;
+				left: vw(120);
+				top: vw(-40);
 				width: vw(240);
 				z-index: -1;
 			}
