@@ -91,6 +91,60 @@ export function initIntroHeading() {
 		svgGroup.scale.set(scale, -scale, scale);
 	};
 
+	scene.add(group);
+	camera.lookAt(scene.position);
+
+	// ============================================
+	// PERFORMANCE: only render while visible, the tab is active, and the
+	// tilt is actually easing toward its target — mirrors laptop-3d.js's
+	// shouldRender()/startRenderLoop()/stopRenderLoop() pattern. Previously
+	// this canvas ran an unthrottled requestAnimationFrame loop forever,
+	// even off-screen or fully settled, which competed with the laptop's
+	// own WebGL context and the SplitText intro animation for the main
+	// thread right at page load.
+	// ============================================
+	let isVisible = false;
+	let isTabVisible = true;
+	let animationFrameId = null;
+	const SETTLE_EPSILON = 0.0005;
+
+	function isSettled() {
+		return Math.abs(targetRotX - group.rotation.x) < SETTLE_EPSILON &&
+			Math.abs(targetRotY - group.rotation.y) < SETTLE_EPSILON;
+	}
+
+	function shouldRender() {
+		return isVisible && isTabVisible && !isSettled();
+	}
+
+	function startRenderLoop() {
+		if (!animationFrameId && shouldRender()) {
+			animate();
+		}
+	}
+
+	function stopRenderLoop() {
+		if (animationFrameId) {
+			cancelAnimationFrame(animationFrameId);
+			animationFrameId = null;
+		}
+	}
+
+	function animate() {
+		if (!shouldRender()) {
+			stopRenderLoop();
+			return;
+		}
+
+		animationFrameId = requestAnimationFrame(animate);
+
+		const ct = 0.08;
+		group.rotation.x += (targetRotX - group.rotation.x) * ct;
+		group.rotation.y += (targetRotY - group.rotation.y) * ct;
+
+		renderer.render(scene, camera);
+	}
+
 	const svgLoader = new SVGLoader();
 	svgLoader.load(
 		TYPO_SVG_URL,
@@ -127,14 +181,16 @@ export function initIntroHeading() {
 
 			updateSvgScale();
 			group.add(svgGroup);
+
+			// The render loop may already have stopped (settled at its initial
+			// idle pose before the SVG finished loading) — force one paint so
+			// the text actually appears, then let shouldRender() take over.
+			renderer.render(scene, camera);
+			startRenderLoop();
 		},
 		undefined,
 		(err) => console.error('[intro-heading] SVG failed to load', err)
 	);
-
-	scene.add(group);
-
-	camera.lookAt(scene.position);
 
 	// MOUSE/TOUCH TILT EFFECT — a subtle tilt-card style effect (like the
 	// classic CSS `rotateX/rotateY` hover card): the pointer position is
@@ -167,6 +223,7 @@ export function initIntroHeading() {
 				targetRotX = 0;
 				targetRotY = 0;
 			}
+			startRenderLoop();
 		},
 		onTouchMove(e) {
 			const touch = e.changedTouches[0];
@@ -176,6 +233,7 @@ export function initIntroHeading() {
 				targetRotX = 0;
 				targetRotY = 0;
 			}
+			startRenderLoop();
 		},
 	};
 
@@ -190,22 +248,38 @@ export function initIntroHeading() {
 		renderer.setSize(width, height);
 		group.position.y = pxToWorldY(verticalOffsetPx);
 		updateSvgScale();
+
+		// Single forced paint so the resize is reflected immediately even if
+		// the render loop is currently stopped (settled + no pointer motion).
+		renderer.render(scene, camera);
 	};
 	window.addEventListener('resize', handleResize);
 
-	// RENDERING
-	// The group's rotation eases toward the target every frame. When the
-	// pointer leaves the canvas the target resets to 0, so it glides back to
-	// rest through the same lerp — no freeze, no snap-back jerk, and no
-	// motion at all while the cursor isn't over it.
-	const render = () => {
-		const ct = 0.08;
-		group.rotation.x += (targetRotX - group.rotation.x) * ct;
-		group.rotation.y += (targetRotY - group.rotation.y) * ct;
+	// ============================================
+	// VISIBILITY OBSERVERS — same approach as laptop-3d.js: only run the
+	// render loop while this canvas is actually on screen and the tab is
+	// active.
+	// ============================================
+	const observer = new IntersectionObserver((entries) => {
+		entries.forEach((entry) => {
+			isVisible = entry.isIntersecting;
+			if (isVisible) {
+				startRenderLoop();
+			} else {
+				stopRenderLoop();
+			}
+		});
+	}, {
+		threshold: 0.1,
+	});
+	observer.observe(container);
 
-		renderer.render(scene, camera);
-
-		requestAnimationFrame(render);
-	};
-	render();
+	document.addEventListener('visibilitychange', () => {
+		isTabVisible = !document.hidden;
+		if (isTabVisible && isVisible) {
+			startRenderLoop();
+		} else {
+			stopRenderLoop();
+		}
+	});
 }

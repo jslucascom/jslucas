@@ -42,7 +42,7 @@ export function initLaptop3D() {
 		// growTargetProgress in updateScroll().
 		startScale: .65,
 		midScale: 5,
-		endScale: 14,
+		endScale: 15,
 
 		// X-position animation (horizontal position)
 		startX: -0.6,
@@ -53,7 +53,7 @@ export function initLaptop3D() {
 		// midY -> endY over the growScrollStart/growScrollHeight window.
 		startY: -0.5,
 		midY: -5.5,
-		endY: -17,
+		endY: -16,
 
 		// Y-rotation animation (left/right spin)
 		startRotationY: Math.PI * -1.24,
@@ -179,7 +179,13 @@ export function initLaptop3D() {
 	// Renderer with lower pixel ratio on mobile for better performance
 	const isMobile = window.innerWidth < 768;
 	const renderer = new THREE.WebGLRenderer({
-		antialias: !isMobile, // Disable antialiasing on mobile
+		// MSAA is a real per-frame cost on this canvas (rendered up to
+		// 3200x1800 at 2x pixel ratio, 7 lights, ~20 draw calls) and this is
+		// exactly the render loop competing with the #intro SplitText reveal
+		// for frame budget during scroll — worth trading away for smoother
+		// scroll on every device, not just mobile. The CSS upscale (see
+		// handleResize) already softens hard edges somewhat.
+		antialias: false,
 		alpha: true,
 		powerPreference: 'high-performance'
 	});
@@ -352,6 +358,37 @@ export function initLaptop3D() {
 						if (child.material && child.material.name === 'Material.002') {
 							child.material = screenMaterial;
 						}
+
+						// "Object_4" (material "Black_Glass") sits almost exactly
+						// coincident with the screen mesh above — local Y range
+						// ~0.0092-0.0106 vs the screen's ~0.0102-0.0105, a gap of
+						// roughly 0.0002 units. Once the scroll animation scales
+						// the laptop up to 14x, that's well within z-fighting
+						// range: the two surfaces flicker against each other as
+						// the model rotates (visible as black squares flashing
+						// on the screen). The old lap-top.obj model never had
+						// this coincident glass-overlay mesh, which is why the
+						// glitch only showed up after switching to this GLB.
+						// (Confirmed via a runtime console.log dump of every
+						// mesh's real name/material/bbox as parsed by
+						// GLTFLoader — node numbering here doesn't match a
+						// Node.js-side glTF inspection, which is why this was
+						// "Object_0" in an earlier, incorrect version of this
+						// fix that silently never matched anything.)
+						// polygonOffset nudges it behind the screen in the depth
+						// buffer without moving the actual geometry, so the
+						// glass still renders — reliably behind the display
+						// instead of fighting with it. Cloned first since
+						// "Black_Glass" is reused by another, unrelated mesh
+						// elsewhere on the model (a trim piece, not coincident
+						// with anything) that shouldn't be affected.
+						if (child.name === 'Object_4') {
+							child.material = child.material.clone();
+							child.material.polygonOffset = true;
+							child.material.polygonOffsetFactor = 4;
+							child.material.polygonOffsetUnits = 4;
+						}
+
 						child.castShadow = true;
 						child.receiveShadow = true;
 					}
@@ -611,8 +648,20 @@ export function initLaptop3D() {
 		}
 	});
 
-	// Scroll listener
-	window.addEventListener('scroll', updateScroll);
+	// Scroll listener — coalesced to at most once per animation frame.
+	// 'scroll' can fire many times per frame (some trackpads/mice fire it on
+	// every pixel of momentum scroll), and updateScroll() was running fully
+	// on each one; batching to rAF means it does that work at most 60x/sec
+	// instead of however fast the browser dispatches the raw events.
+	let scrollRafPending = false;
+	window.addEventListener('scroll', () => {
+		if (scrollRafPending) return;
+		scrollRafPending = true;
+		requestAnimationFrame(() => {
+			scrollRafPending = false;
+			updateScroll();
+		});
+	});
 
 	// Handle window resize - scale canvas via CSS
 	function handleResize() {
